@@ -28,13 +28,31 @@ _(do dodania przed pierwszym release)_
 # Testy rdzenia C++ (szybko, bez NDK/JDK):
 scripts/build-core-tests.sh
 
-# Całość + APK (potrzebujesz JDK 17, Android SDK 34, NDK 27):
-docs/BUILD.md
+# APK debug (potrzebujesz JDK 17 + Android SDK 35 + NDK 27.2.12479018):
+cd android && ./gradlew :app:assembleDebug
 ```
+
+Szczegóły (w tym build offline dla F-Droid): [`docs/BUILD.md`](docs/BUILD.md).
 
 ## Jak grać
 
-TBD.
+1. Podaj nick i wybierz swoje miasto — aplikacja wygeneruje lokalne kluby.
+2. Zagraj mecz: **5 rzutów karnych** (tap na bramkę = strzał) i **5 obron**.
+3. Awansuj z B klasy przez 8 lig aż do Ekstraklasy (top-2 awans, bottom-2 spadek).
+
+## Sekrety CI (release)
+
+Workflow [`release.yml`](.github/workflows/release.yml) podpisuje APK dla
+GitHub Releases. Wymaga sekretów repo:
+
+| Sekret | Opis |
+|---|---|
+| `RELEASE_KEYSTORE_BASE64` | keystore JKS zakodowany base64 |
+| `RELEASE_STORE_PASSWORD` | hasło keystore |
+| `RELEASE_KEY_ALIAS` | alias klucza |
+| `RELEASE_KEY_PASSWORD` | hasło klucza |
+
+Klucz wygenerujesz przez `scripts/make-keystore.sh` (NIE commitować `*.jks`).
 
 ## Jak dodać tłumaczenie
 

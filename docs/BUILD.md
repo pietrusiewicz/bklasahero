@@ -13,8 +13,8 @@ Trzy niezależne cele builda:
 - **CMake ≥ 3.22**
 - **Kompilator C++23**: GCC 13+ albo Clang 16+
 - **JDK 17** (Android)
-- **Android SDK 34** + **NDK 27** (Android)
-- **Android Build Tools 34+** (apksigner, zipalign)
+- **Android SDK 35** + **NDK 27.2.12479018** (Android)
+- **Android Build Tools 35.0.0** (apksigner, zipalign)
 - Dysk: 4 GB na cache Gradle + FetchContent.
 
 ## Szybki start (host)
@@ -30,11 +30,10 @@ scripts/build-core-tests.sh
 # 1. Jednorazowo: klucz do podpisu release.
 scripts/make-keystore.sh release
 
-# 2. Wskaż SDK + NDK.
+# 2. Wskaż SDK (NDK wersję pinuje build.gradle.kts: ndkVersion).
 export ANDROID_HOME=$HOME/Android/Sdk
-export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973
 
-# 3. Zbuduj APK release.
+# 3. Zbuduj APK release (unsigned — F-Droid podpisuje własnym kluczem).
 cd android
 ./gradlew :app:assembleRelease
 ```
@@ -48,10 +47,8 @@ scripts/fetch-deps.sh --offline /opt/deps
 # Konfiguruj build z lokalnym cache.
 cmake --preset host-debug -DBKH_DEPS_DIR=/opt/deps
 cd android
-./gradlew :app:assembleRelease \
-    -Pbkh.deps.dir=/opt/deps \
-    -Pbkh.json.dir=/opt/deps/json-3.12.0 \
-    -Pbkh.gtest.dir=/opt/deps/googletest-1.18.0
+# build.gradle.kts mapuje bkh.deps.dir → -DBKH_DEPS_DIR dla CMake.
+./gradlew :app:assembleRelease -Pbkh.deps.dir=/opt/deps
 ```
 
 ## Diagnostyka
@@ -64,7 +61,7 @@ cmake --preset host-debug --trace-source=BkhDependencies
 cd android && ./gradlew :app:assembleDebug --info --stacktrace
 
 # Brak ikony w mipmap?
-# Zob. android/app/src/main/res/mipmap-anydpi-v26/README.md
+# Wygeneruj je ponownie: python3 tools/icons/generate_icons.py
 ```
 
 ## Wersja rdzenia vs. aplikacji
