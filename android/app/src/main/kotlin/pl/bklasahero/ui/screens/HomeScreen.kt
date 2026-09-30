@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import pl.bklasahero.R
 import pl.bklasahero.ui.AppIntent
+import pl.bklasahero.ui.AppScreen
 import pl.bklasahero.ui.AppUiState
 
 @Composable
@@ -40,7 +41,7 @@ fun HomeScreen(state: AppUiState, dispatch: (AppIntent) -> Unit) {
             )
             Button(
                 onClick = { dispatch(AppIntent.SetScreen(AppScreen.NewCareer)) },
-                modifier = Modifier.fillMaxWidth().size(width = 0.dp, height = 56.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
             ) {
                 Text(stringResource(R.string.home_new_career))
             }

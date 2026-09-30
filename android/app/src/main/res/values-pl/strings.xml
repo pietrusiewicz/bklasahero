@@ -32,4 +32,5 @@
 
     <string name="table_title">Tabela ligi</string>
     <string name="fixtures_title">Terminarz</string>
+    <string name="fixtures_round">Kolejka %1$d</string>
 </resources>

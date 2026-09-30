@@ -1,17 +1,23 @@
 // ViewModel trzymający globalny stan UI. Każda zmiana ekranu idzie przez
-// `dispatch`, żeby zachować jedno źródło prawdy i łatwe testowanie.
+// `dispatch` (czyste przejścia), a operacje asynchroniczne przez
+// `initialize` / metody `on...` wywoływane z ekranów.
 // SPDX-License-Identifier: GPL-3.0-or-later
 package pl.bklasahero
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import pl.bklasahero.data.AppContainer
+import pl.bklasahero.engine.NativeBridge
 import pl.bklasahero.ui.AppIntent
-import pl.bklasahero.ui.AppUiState
 import pl.bklasahero.ui.AppScreen
+import pl.bklasahero.ui.AppUiState
 import pl.bklasahero.ui.reduce
 
 class AppViewModel(private val container: AppContainer) : ViewModel() {
@@ -23,13 +29,56 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
         _uiState.update { reduce(it, intent, container) }
     }
 
-    fun onProtocolReady(protocolVersion: Int, saveSchemaVersion: Int) {
+    /** Sekwencja startowa: wersje → CSV miejscowości → save z bazy → Home. */
+    fun initialize() {
         _uiState.update {
             it.copy(
-                protocolVersion = protocolVersion,
-                saveSchemaVersion = saveSchemaVersion,
+                protocolVersion = NativeBridge.protocolVersion,
+                saveSchemaVersion = NativeBridge.saveSchemaVersion,
             )
         }
+        viewModelScope.launch {
+            val places = container.placesRepository.loadFromAssets()
+            if (places.isFailure) {
+                _uiState.update { it.copy(screen = AppScreen.Loading, toast = "places.load_failed") }
+                return@launch
+            }
+            // Przywróć karierę, jeśli istnieje.
+            val restored = runCatching { container.careerRepository.loadFromDatabase() }.getOrDefault(false)
+            _uiState.update {
+                it.copy(
+                    screen = AppScreen.Home,
+                    careerReady = restored,
+                )
+            }
+        }
+    }
+
+    /** Polecenie "newCareer" → wgrywa świeżą karierę. */
+    fun startNewCareer(nickname: String, homeOsmId: Int) {
+        viewModelScope.launch {
+            val cmd = buildJsonObject {
+                put("cmd", "newCareer")
+                put("nickname", nickname)
+                put("homeOsmId", homeOsmId)
+            }
+            NativeBridge.command(cmd)
+                .onSuccess { data -> _uiState.update { it.copy(careerJson = data, careerReady = true, screen = AppScreen.Career) } }
+                .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
+        }
+    }
+
+    /** Polecenie "career" → odświeża podsumowanie kariery. */
+    fun refreshCareer() {
+        viewModelScope.launch {
+            NativeBridge.command(buildJsonObject { put("cmd", "career") })
+                .onSuccess { data -> _uiState.update { it.copy(careerJson = data) } }
+                .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
+        }
+    }
+
+    fun onProtocolReady(protocolVersion: Int, saveSchemaVersion: Int) {
+        _uiState.update { it.copy(protocolVersion = protocolVersion, saveSchemaVersion = saveSchemaVersion) }
     }
 
     class Factory(private val container: AppContainer) : ViewModelProvider.Factory {
@@ -39,6 +88,3 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 }
-
-val AppUiState.currentScreen: AppScreen
-    get() = screen

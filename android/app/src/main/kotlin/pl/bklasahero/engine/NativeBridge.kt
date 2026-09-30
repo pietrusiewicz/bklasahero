@@ -64,11 +64,13 @@ object NativeBridge {
     /** Ładuje listę miejscowości z bufora bajtów (np. z assets/places_pl.csv). */
     fun loadPlacesCsv(bytes: ByteArray): Result<Unit> = runCatchingUnit {
         ensureLoaded()
-        nativeLoadPlacesCsv(bytes)
+        if (!nativeLoadPlacesCsv(bytes)) {
+            throw NativeBridgeException("places CSV load failed")
+        }
     }
 
     /** Wysyła polecenie JSON, zwraca sparsowaną odpowiedź JSON. */
-    fun command(payload: JsonObject): Result<JsonObject> = runCatchingUnit {
+    fun command(payload: JsonObject): Result<JsonObject> = runCatching {
         ensureLoaded()
         val text = json.encodeToString(JsonObject.serializer(), payload)
         val response = nativeCommand(text)
@@ -80,7 +82,11 @@ object NativeBridge {
         runCatchingString { nativeSaveCareer(savedAtEpochMs) }
 
     /** Wczytanie save'a — zwraca true przy powodzeniu. */
-    fun loadCareer(json: String): Result<Unit> = runCatchingUnit { nativeLoadCareer(json) }
+    fun loadCareer(json: String): Result<Unit> = runCatchingUnit {
+        if (!nativeLoadCareer(json)) {
+            throw NativeBridgeException("career load failed")
+        }
+    }
 
     private fun parseResponse(raw: String): JsonObject {
         val root = json.parseToJsonElement(raw).jsonObject
@@ -114,13 +120,34 @@ object NativeBridge {
     private external fun nativeProtocolVersion(): Int
     private external fun nativeSaveSchemaVersion(): Int
     private external fun nativeCoreVersion(): String
+    private external fun nativeFrameFloatCount(): Int
+    private external fun nativeWriteFrame(target: FloatArray): Int
+    private external fun nativeClearPlayback()
+    private external fun nativeHasPlayback(): Boolean
+
+    // --- Kanał renderujący (publiczne wrappery) ---------------------------
 
     /** Minimalny rozmiar bufora klatki (0 = brak odtwarzania). */
-    internal external fun frameFloatCount(): Int
+    fun frameFloatCount(): Int {
+        ensureLoaded()
+        return nativeFrameFloatCount()
+    }
+
     /** Zwraca liczbę zapisanych floatów, lub wartość ujemną gdy bufor za mały. */
-    internal external fun writeFrame(target: FloatArray): Int
-    internal external fun clearPlayback()
-    internal external fun hasPlayback(): Boolean
+    fun writeFrame(target: FloatArray): Int {
+        ensureLoaded()
+        return nativeWriteFrame(target)
+    }
+
+    fun clearPlayback() {
+        ensureLoaded()
+        nativeClearPlayback()
+    }
+
+    fun hasPlayback(): Boolean {
+        ensureLoaded()
+        return nativeHasPlayback()
+    }
 
     // --- Wynikowe helpers --------------------------------------------------
 

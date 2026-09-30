@@ -10,20 +10,26 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
 
+// Wersja z nadpisaniem przez CI: `-PversionName=... -PversionCode=...`.
+// Domyślnie używamy stałej semver z rdzenia (patrz scripts/bump-version.sh).
+val versionNameOverride = (project.findProperty("versionName") as String?) ?: "0.1.0"
+val versionCodeOverride = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 1
+
 android {
     namespace = "pl.bklasahero"
-    compileSdk = 34
+    compileSdk = 35
+    buildToolsVersion = "35.0.0"
+    ndkVersion = "27.2.12479018"
 
     defaultConfig {
         applicationId = "pl.bklasahero"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        targetSdk = 35
+        versionCode = versionCodeOverride
+        versionName = versionNameOverride
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
@@ -35,6 +41,11 @@ android {
                     "-DANDROID_STL=c++_static",
                     "-DCMAKE_BUILD_TYPE=Release",
                 )
+                // Offline (F-Droid): -Pbkh.deps.dir=$$srclib$$ → rdzeń używa
+                // lokalnych źródeł json/googletest zamiast FetchContent.
+                (project.findProperty("bkh.deps.dir") as String?)?.let { dir ->
+                    arguments += "-DBKH_DEPS_DIR=$dir"
+                }
                 cppFlags += "-std=c++23"
                 cFlags += listOf("-fvisibility=hidden")
             }
@@ -51,11 +62,9 @@ android {
         }
     }
 
-    signingConfigs {
-        // release jest nadpisywany przez scripts/sign-apk.sh w CI
-        // (klucze NIE siedzą w repo).
-    }
-
+    // Release jest celowo NIEPODPISANY: F-Droid podpisuje własnym kluczem.
+    // Podpis dla GitHub Releases wykonuje scripts/sign-apk.sh na APK po buildzie
+    // (klucze żyją w sekretach CI, nie w repo).
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
@@ -68,8 +77,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // Podpis wstrzykiwany przez Gradle w release CI.
-            signingConfig = signingConfigs.findByName("release")
         }
     }
 
@@ -88,6 +95,12 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    composeOptions {
+        // Wersja kompilatora Compose dla Kotlin 1.9.24 (tablica kompatybilności
+        // na https://developer.android.com/jetpack/androidx/releases/compose-kotlin).
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     packaging {

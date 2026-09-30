@@ -9,8 +9,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.ViewModelProvider
-import pl.bklasahero.engine.NativeBridge
 import pl.bklasahero.ui.AppNavGraph
 import pl.bklasahero.ui.theme.BKlasaHeroTheme
 
@@ -23,14 +21,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        // Pierwszy kontakt z mostka JNI: inicjalizacja + sanity-check wersji.
-        val proto = NativeBridge.protocolVersion
-        val schema = NativeBridge.saveSchemaVersion
-        viewModel.onProtocolReady(proto, schema)
+        viewModel.initialize()
         setContent {
             val state by viewModel.uiState.collectAsState()
             BKlasaHeroTheme(state.darkTheme) {
-                AppNavGraph(state, viewModel::dispatch)
+                AppNavGraph(state, viewModel)
             }
         }
     }

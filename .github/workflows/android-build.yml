@@ -1,5 +1,5 @@
 # B-Klasa Hero — budowa APK debug na każdym PR (weryfikacja, że Gradle/NDK żyją).
-# Nie podpisuje (debug jest podpisany domyślnym kluczem).
+# Uruchamiany na runnerze x86_64, gdzie AAPT2 i NDK działają natywnie.
 # SPDX-License-Identifier: GPL-3.0-or-later
 name: android-build
 
@@ -21,22 +21,34 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Konfiguracja Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalacja platform + build-tools + NDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;27.2.12479018" \
+            "platform-tools" >/dev/null
+
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
-               ~/.gradle/caches
-               ~/.gradle/wrapper
-               android/.gradle
-            build
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
             android/app/.cxx
-          key: gradle-android-${{ runner.os }}-${{ hashFiles('android/build.gradle.kts', 'android/app/build.gradle.kts') }}
+          key: gradle-android-${{ runner.os }}-${{ hashFiles('android/build.gradle.kts', 'android/app/build.gradle.kts', 'android/settings.gradle.kts') }}
+          restore-keys: |
+            gradle-android-${{ runner.os }}-
 
       - name: Kompilacja APK debug
         run: |
           cd android
-          ./gradlew --no-daemon :app:assembleDebug \
-            -Pbkh.deps.dir=
+          ./gradlew --no-daemon :app:assembleDebug
 
       - name: Artefakt: APK debug
         uses: actions/upload-artifact@v4

@@ -1,33 +1,32 @@
-# Tablica stanu prac
+# Dziennik zmian
 
-| Obszar | Pliki | Stan |
-|---|---|---|
-| Kontrakty rdzenia | `core/include/bkh/*.h` | gotowe |
-| Rdzeń C++23 (12 modułów) | `core/src/*.cpp` | gotowe |
-| 77 testów GoogleTest | `core/tests/*.cpp` | gotowe |
-| Mostek JNI (libbkh_bridge.so) | `bridge/src/*.cpp`, `bridge/include/bkh_bridge/*.h` | gotowe |
-| Aplikacja Android (Compose) | `android/app/src/main/...` | szkielet |
-| CI workflows | `.github/workflows/{host-tests,android-build,release}.yml` | gotowe |
-| Skrypty budowy/podpisu | `scripts/*.sh` | gotowe |
-| F-Droid + fastlane metadata | `metadata/`, `fastlane/metadata/` | gotowe |
-| ADRs | `docs/ADR/0001-0006` | gotowe |
-| Build / F-Droid / Privacy docs | `docs/{BUILD,FDROID,PRIVACY}.md` | gotowe |
-| README + LICENSE | `README.md`, `LICENSE` | gotowe |
+Wszystkie istotne zmiany projektu są tu rejestrowane. Format inspirowany
+[Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie zgodne
+z [SemVer](https://semver.org/lang/pl/).
 
-## Wersja
+## [0.1.0] — 2025 (pierwsze wydanie)
 
-- Rdzeń: **0.1.0** (`BKH_VERSION_*` w `core/CMakeLists.txt`)
-- Protokół JSON: **1** (`kProtocolVersion` w `core/include/bkh/facade.h`)
-- Schema save'a: **1** (`CareerState::schemaVersion`)
+### Dodane
 
-## Licencje zależności
+- **Rdzeń C++23** (`core/`): fizyka piłki (opór + efekt Magnusa), kolizje
+  ze słupkami/poprzeczką, bramkarz z profilami per-liga, strzelec, konkurs
+  rzutów karnych 5+5 z nagłą śmiercią, deterministyczny RNG (xoshiro256**).
+- **Kariera**: 8-poziomowa piramida (B klasa → Ekstraklasa), 10 klubów,
+  9 kolejek, awans top-2 / spadek bottom-2, symulacja pozostałych meczów kolejki.
+- **Katalog miejscowości**: ~7 800 lokalizacji OSM + generowanie wymyślonych
+  nazw klubów wokół miasta gracza.
+- **Mostek JNI** (`bridge/`): 10 eksportowanych symboli `Java_*`, kanał
+  sterowania JSON + kanał renderujący (bufor float).
+- **Aplikacja Android** (Kotlin/Jetpack Compose, Material 3): pseudo-3D
+  renderer boiska na Canvas, Room do save'ów, zero uprawnień INTERNET.
+- **77 testów GoogleTest** pokrywających rdzeń i balans symulacji.
+- **CI** (GitHub Actions): testy hosta, build APK, publikacja release.
+- **F-Droid** metadata + fastlane PL/EN + ikony launcher'a (CC0).
 
-| Zależność | Wersja | Licencja | Rola |
-|---|---|---|---|
-| nlohmann/json | 3.12.0 | MIT | Serializacja JSON (rdzeń + save) |
-| GoogleTest | 1.18.0 | BSD-3-Clause | Testy (tylko build hosta, NIE trafia do APK) |
-| OpenStreetMap | — | ODbL | Dane miejscowości |
+### Zmienione
 
-Obie zależności są pobierane z GitHub + weryfikowane SHA256
-(`cmake/BkhDependencies.cmake`). Dla trybu offline jest
-`scripts/fetch-deps.sh`.
+- Brak (pierwsze wydanie).
+
+### Naprawione
+
+- Brak (pierwsze wydanie).

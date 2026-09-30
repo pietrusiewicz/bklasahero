@@ -22,7 +22,7 @@ class CareerRepository(
     /** Zapisuje bieżącą karierę z rdzenia do bazy. */
     fun persistCurrent() {
         scope.launch {
-            NativeBridge.saveCareer()?.let { blob ->
+            NativeBridge.saveCareer().getOrNull()?.let { blob ->
                 dao.save(blob, System.currentTimeMillis())
             }
         }

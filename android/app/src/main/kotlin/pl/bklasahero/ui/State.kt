@@ -32,38 +32,23 @@ sealed interface AppIntent {
     data class SetScreen(val screen: AppScreen) : AppIntent
     data class ShowToast(val text: String?) : AppIntent
     data class SetCareer(val json: JsonObject) : AppIntent
-    data class StartNewCareer(val nickname: String, val homeOsmId: Int) : AppIntent
-    data class BeginMatch(val opponentName: String) : AppIntent
-    data class Shoot(val aimX: Float, val aimY: Float, val effort: Float) : AppIntent
-    data class Dive(val side: String, val height: String) : AppIntent
-    data object FinishMatch : AppIntent
     data object SaveCareer : AppIntent
-    data object LoadCareer : AppIntent
-    data object OpenTable : AppIntent
-    data object OpenFixtures : AppIntent
     data object ToggleTheme : AppIntent
 }
 
+/**
+ * Czysty reduktor — wyłącznie przejścia stanu. Skutki uboczne (NativeBridge,
+ * Room) wykonują ViewModel / ekrany przed wywołaniem dispatch.
+ */
 fun reduce(state: AppUiState, intent: AppIntent, container: AppContainer): AppUiState =
     when (intent) {
         AppIntent.ContinueLoading -> state.copy(screen = AppScreen.Home)
         is AppIntent.SetScreen -> state.copy(screen = intent.screen)
         is AppIntent.ShowToast -> state.copy(toast = intent.text)
         is AppIntent.SetCareer -> state.copy(careerJson = intent.json, careerReady = true)
-        is AppIntent.StartNewCareer -> {
-            // Wywołanie polecenia "newCareer" jest zrobione przez DispatcherAsync w warstwie wywołującej.
-            state.copy(screen = AppScreen.Career)
-        }
-        is AppIntent.BeginMatch -> state.copy(screen = AppScreen.Match)
-        is AppIntent.Shoot -> state.copy(screen = AppScreen.Shootout)
-        is AppIntent.Dive -> state.copy(screen = AppScreen.Defend)
-        AppIntent.FinishMatch -> state.copy(screen = AppScreen.Result)
         AppIntent.SaveCareer -> {
             container.careerRepository.persistCurrent()
-            state.copy(toast = "Zapisano")
+            state.copy(toast = "saved")
         }
-        AppIntent.LoadCareer -> state
-        AppIntent.OpenTable -> state.copy(screen = AppScreen.Table)
-        AppIntent.OpenFixtures -> state.copy(screen = AppScreen.Fixtures)
         AppIntent.ToggleTheme -> state.copy(darkTheme = !state.darkTheme)
     }

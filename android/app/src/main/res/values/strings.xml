@@ -33,4 +33,5 @@
 
     <string name="table_title">League table</string>
     <string name="fixtures_title">Fixtures</string>
+    <string name="fixtures_round">Round %1$d</string>
 </resources>

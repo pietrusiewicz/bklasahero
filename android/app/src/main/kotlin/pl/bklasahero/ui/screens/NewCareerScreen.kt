@@ -1,5 +1,6 @@
 // Formularz nowej kariery + wyszukiwarka miasta.
-// Wpisujesz nick, wybierasz miasto z listy (podpowiedzi z rdzenia: cmd="searchCity").
+// Wpisujesz nick, wybierasz miasto z listy (podpowiedzi z rdzenia: cmd="searchCity"),
+// zatwierdzasz → cmd="newCareer".
 // SPDX-License-Identifier: GPL-3.0-or-later
 package pl.bklasahero.ui.screens
 
@@ -17,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,23 +26,43 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import pl.bklasahero.AppViewModel
 import pl.bklasahero.R
-import pl.bklasahero.ui.AppIntent
+import pl.bklasahero.engine.NativeBridge
 import pl.bklasahero.ui.AppUiState
 
+private data class CitySuggestion(val osmId: Int, val name: String)
+
 @Composable
-fun NewCareerScreen(state: AppUiState, dispatch: (AppIntent) -> Unit) {
+fun NewCareerScreen(state: AppUiState, viewModel: AppViewModel) {
     var nickname by remember { mutableStateOf("") }
     var query by remember { mutableStateOf("") }
-    val suggestions = remember { MutableStateFlow<List<JsonObject>>(emptyList()) }
-    val list by suggestions.collectAsState()
+    val suggestions = remember { MutableStateFlow<List<CitySuggestion>>(emptyList()) }
 
     LaunchedEffect(query) {
-        if (query.length >= 2) {
-            // Tu idzie wywołanie NativeBridge.command({"cmd":"searchCity","query":query})
-            // — pomijam pełny dispatcher, żeby ekran był samodzielny.
+        if (query.length < 2) {
+            suggestions.value = emptyList()
+            return@LaunchedEffect
         }
+        val cmd = buildJsonObject {
+            put("cmd", "searchCity")
+            put("query", query)
+            put("limit", 8)
+        }
+        NativeBridge.command(cmd)
+            .onSuccess { data ->
+                val arr = data["items"]?.jsonArray ?: return@onSuccess
+                suggestions.value = arr.mapNotNull { el ->
+                    val obj = el as? kotlinx.serialization.json.JsonObject ?: return@mapNotNull null
+                    val osm = obj["osmId"]?.jsonPrimitive?.content?.toIntOrNull() ?: return@mapNotNull null
+                    val name = obj["name"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                    CitySuggestion(osm, name)
+                }
+            }
     }
 
     Column(
@@ -65,15 +85,19 @@ fun NewCareerScreen(state: AppUiState, dispatch: (AppIntent) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         )
         LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            items(list) { city ->
+            items(suggestions.value) { city ->
                 TextButton(onClick = {
-                    val id = (city["osmId"] ?: city["osm_id"])?.toString()?.toIntOrNull() ?: 0
-                    dispatch(AppIntent.StartNewCareer(nickname, id))
-                }) { Text(city["name"]?.toString().orEmpty()) }
+                    viewModel.startNewCareer(nickname.ifBlank { "B-Klasa" }, city.osmId)
+                }) { Text(city.name) }
             }
         }
         Button(
-            onClick = { dispatch(AppIntent.SetScreen(AppScreen.Career)) },
+            onClick = {
+                val first = suggestions.value.firstOrNull()
+                if (first != null && nickname.isNotBlank()) {
+                    viewModel.startNewCareer(nickname, first.osmId)
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             enabled = nickname.isNotBlank(),
         ) {
