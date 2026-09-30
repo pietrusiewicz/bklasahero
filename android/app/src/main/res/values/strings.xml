@@ -29,6 +29,7 @@
     <string name="career_save">Save</string>
 
     <string name="match_tap_to_shoot">Tap the goal to shoot</string>
+    <string name="match_start_shootout">Start penalty shootout</string>
     <string name="result_swipe_to_continue">Swipe to continue</string>
 
     <string name="table_title">League table</string>

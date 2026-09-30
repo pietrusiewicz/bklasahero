@@ -28,6 +28,7 @@
     <string name="career_save">Zapisz</string>
 
     <string name="match_tap_to_shoot">Kliknij bramkę, żeby strzelić</string>
+    <string name="match_start_shootout">Rozpocznij rzuty karne</string>
     <string name="result_swipe_to_continue">Przesuń, aby kontynuować</string>
 
     <string name="table_title">Tabela ligi</string>
