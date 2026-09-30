@@ -25,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
@@ -41,11 +40,11 @@ private data class CitySuggestion(val osmId: Int, val name: String)
 fun NewCareerScreen(state: AppUiState, viewModel: AppViewModel) {
     var nickname by remember { mutableStateOf("") }
     var query by remember { mutableStateOf("") }
-    val suggestions = remember { MutableStateFlow<List<CitySuggestion>>(emptyList()) }
+    var suggestions by remember { mutableStateOf<List<CitySuggestion>>(emptyList()) }
 
     LaunchedEffect(query) {
         if (query.length < 2) {
-            suggestions.value = emptyList()
+            suggestions = emptyList()
             return@LaunchedEffect
         }
         val cmd = buildJsonObject {
@@ -56,7 +55,7 @@ fun NewCareerScreen(state: AppUiState, viewModel: AppViewModel) {
         NativeBridge.command(cmd)
             .onSuccess { data ->
                 val arr = data["items"]?.jsonArray ?: return@onSuccess
-                suggestions.value = arr.mapNotNull { el ->
+                suggestions = arr.mapNotNull { el ->
                     val obj = el as? kotlinx.serialization.json.JsonObject ?: return@mapNotNull null
                     val osm = obj["osmId"]?.jsonPrimitive?.content?.toIntOrNull() ?: return@mapNotNull null
                     val name = obj["name"]?.jsonPrimitive?.content ?: return@mapNotNull null
@@ -85,7 +84,7 @@ fun NewCareerScreen(state: AppUiState, viewModel: AppViewModel) {
             modifier = Modifier.fillMaxWidth(),
         )
         LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            items(suggestions.value) { city ->
+            items(suggestions) { city ->
                 TextButton(onClick = {
                     viewModel.startNewCareer(nickname.ifBlank { "B-Klasa" }, city.osmId)
                 }) { Text(city.name) }
@@ -93,7 +92,7 @@ fun NewCareerScreen(state: AppUiState, viewModel: AppViewModel) {
         }
         Button(
             onClick = {
-                val first = suggestions.value.firstOrNull()
+                val first = suggestions.firstOrNull()
                 if (first != null && nickname.isNotBlank()) {
                     viewModel.startNewCareer(nickname, first.osmId)
                 }

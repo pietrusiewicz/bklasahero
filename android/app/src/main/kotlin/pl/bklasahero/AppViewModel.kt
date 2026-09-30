@@ -43,8 +43,13 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
                 _uiState.update { it.copy(screen = AppScreen.Loading, toast = "places.load_failed") }
                 return@launch
             }
-            // Przywróć karierę, jeśli istnieje.
-            val restored = runCatching { container.careerRepository.loadFromDatabase() }.getOrDefault(false)
+            // Przywróć karierę, jeśli istnieje (suspend — wywołujemy wprost,
+            // jesteśmy już w coroutine `launch`).
+            val restored = try {
+                container.careerRepository.loadFromDatabase()
+            } catch (e: Throwable) {
+                false
+            }
             _uiState.update {
                 it.copy(
                     screen = AppScreen.Home,
