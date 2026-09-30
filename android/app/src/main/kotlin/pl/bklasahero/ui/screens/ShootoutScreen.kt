@@ -15,6 +15,7 @@ import kotlinx.serialization.json.put
 import pl.bklasahero.AppViewModel
 import pl.bklasahero.engine.FrameBuffer
 import pl.bklasahero.engine.NativeBridge
+import pl.bklasahero.ui.AppIntent
 import pl.bklasahero.ui.AppScreen
 import pl.bklasahero.ui.AppUiState
 import pl.bklasahero.ui.render.MatchRenderer
@@ -39,7 +40,7 @@ fun ShootoutScreen(state: AppUiState, viewModel: AppViewModel) {
                     }
                     NativeBridge.command(cmd).onSuccess {
                         FrameBuffer.pull(FloatArray(0))
-                        viewModel.dispatch(pl.bklasahero.ui.AppIntent.SetScreen(AppScreen.Result))
+                        viewModel.dispatch(AppIntent.SetScreen(AppScreen.Result))
                     }
                 })
             },

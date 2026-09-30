@@ -77,10 +77,6 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    fun onProtocolReady(protocolVersion: Int, saveSchemaVersion: Int) {
-        _uiState.update { it.copy(protocolVersion = protocolVersion, saveSchemaVersion = saveSchemaVersion) }
-    }
-
     class Factory(private val container: AppContainer) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
