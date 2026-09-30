@@ -1,0 +1,41 @@
+# --- C++ / CMake ---
+build/
+build-*/
+cmake-build-*/
+CMakeUserPresets.json
+*.o
+*.a
+*.so
+*.so.*
+*.d
+compile_commands.json
+Testing/
+CTestTestfile.cmake
+
+# --- Gradle / Android ---
+.gradle/
+local.properties
+android/**/build/
+android/build/
+android/.kotlin/
+*.apk.idsig
+android/app/release/
+keystore.properties
+*.jks
+*.keystore
+
+# --- Narzędzia danych geo (surowe odpowiedzi Overpass są duże i odtwarzalne) ---
+tools/geo/cache/
+
+# --- Redakcja / system ---
+*~
+.*.swp
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# --- F-Droid / fastlane artefakty lokalne ---
+metadata/*.log
+*.tmp
