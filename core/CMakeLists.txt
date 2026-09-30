@@ -14,6 +14,7 @@ add_library(bkh_core STATIC
         src/physics.cpp
         src/keeper.cpp
         src/shooter.cpp
+        src/shot.cpp
         src/shootout.cpp
         src/place.cpp
         src/club.cpp
@@ -35,7 +36,8 @@ target_link_libraries(bkh_core PUBLIC nlohmann_json::nlohmann_json)
 target_compile_definitions(bkh_core PUBLIC
         BKH_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
         BKH_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-        BKH_VERSION_PATCH=${PROJECT_VERSION_PATCH})
+        BKH_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+        BKH_VERSION_STRING="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 set_target_properties(bkh_core PROPERTIES
         CXX_VISIBILITY_PRESET hidden

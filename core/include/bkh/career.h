@@ -343,7 +343,7 @@ public:
     [[nodiscard]] KeeperProfile playerKeeperProfile() const;
 
 private:
-    Result<void> buildSeason(i32 tierIndex, i32 seasonNumber, Random& rng);
+    Result<void> buildSeason(i32 tierIndex, i32 seasonNumber, const PlaceCatalog* catalog, Random& rng);
 
     CareerState state_{};
 };

@@ -49,16 +49,30 @@ inline constexpr std::string_view kAttributeMaxed = "error.attribute_maxed";
 inline constexpr std::string_view kAlreadyUnlocked = "error.already_unlocked";
 inline constexpr std::string_view kLocked = "error.locked";
 inline constexpr std::string_view kBadJson = "error.bad_json";
+inline constexpr std::string_view kBadParam = "error.bad_param";
 inline constexpr std::string_view kSchemaVersion = "error.schema_version";
 inline constexpr std::string_view kPlacesNotLoaded = "error.places_not_loaded";
 inline constexpr std::string_view kCityNotFound = "error.city_not_found";
 inline constexpr std::string_view kUnknownCommand = "error.unknown_command";
 inline constexpr std::string_view kInternal = "error.internal";
+inline constexpr std::string_view kNoSkillPoints = "error.no_skill_points";
+inline constexpr std::string_view kMaxedOut = "error.maxed_out";
+inline constexpr std::string_view kNotUnlocked = "error.not_unlocked";
+inline constexpr std::string_view kIncomplete = "error.incomplete";
 }  // namespace errc
 
 /// Skrót do konstrukcji błędu.
 [[nodiscard]] inline Error makeError(std::string_view code, std::string message) {
     return Error{code, std::move(message)};
+}
+
+/// Skrót do konstrukcji nieoczekiwanego wyniku (bezpośrednio zwracanego z `Result<T>`).
+[[nodiscard]] inline std::unexpected<Error> unexpected(std::string_view code, std::string message) {
+    return std::unexpected(Error{code, std::move(message)});
+}
+
+[[nodiscard]] inline std::unexpected<Error> unexpected(const Error& e) {
+    return std::unexpected(e);
 }
 
 }  // namespace bkh

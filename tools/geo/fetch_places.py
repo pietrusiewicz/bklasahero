@@ -523,13 +523,15 @@ def do_build(args: argparse.Namespace) -> int:
     used_threshold = None
     csv_bytes = None
     for threshold in thresholds:
-        stats = dict(fetch_stats)
-        rows = apply_village_threshold(deduped, threshold, stats)
+        threshold_stats = {}
+        rows = apply_village_threshold(deduped, threshold, threshold_stats)
         csv_bytes = render_csv(rows)
         log(f"threshold={threshold}: {len(rows)} rows, {len(csv_bytes)} bytes "
             f"(max {args.max_bytes})")
         if len(csv_bytes) <= args.max_bytes:
             final_rows, used_threshold = rows, threshold
+            # Surface the winning iteration's threshold stats in the report.
+            fetch_stats.update(threshold_stats)
             break
     if final_rows is None:
         log("ERROR: CSV still exceeds --max-bytes at threshold "

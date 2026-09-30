@@ -39,3 +39,7 @@ Thumbs.db
 # --- F-Droid / fastlane artefakty lokalne ---
 metadata/*.log
 *.tmp
+
+# --- Python (narzędzia danych) ---
+__pycache__/
+*.pyc
