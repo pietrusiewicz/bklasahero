@@ -18,6 +18,9 @@ function(bkh_apply_compile_options)
                         -Wnull-dereference -Wdouble-promotion
                         -Wimplicit-fallthrough -Wuseless-cast
                         -Wformat=2)
+    # Biblioteka rdzenia jest wkompilowana w libbkh_bridge.so (NDK),
+    # więc potrzebuje kodu niezależnego od pozycji.
+    add_compile_options(-fPIC)
 
     if(BKH_WERROR)
         add_compile_options(-Werror)
