@@ -1,0 +1,36 @@
+"B-Klasa Hero" (znane też jako "Sunday League Hero") to gra piłkarska
+złożona w 100% z kodu open-source'owego. Bez reklam, mikropłatności i
+telemetrii. Bez internetu.
+
+MECHANIKA:
+  * Wykonaj 5 rzutów karnych przeciw CPU, a potem obroń 5.
+  * Strzał: tap w pole bramki.
+  * Obrona: wybierz kierunek i wysokość skoku.
+  * Piłka podlega fizyce: grawitacja, opór powietrza, efekt Magnusa,
+    odbicia od słupków i poprzeczki.
+  * Wynik konkursu decyduje o punktach w lidze.
+
+KARIERA:
+  * Startujesz w B klasie z drużyną wymyśloną przez generator.
+  * Każdy sezon = 9 kolejek × 5 meczów (terminarz kołowy).
+  * Awansujesz do wyższej ligi lub spadasz — w zależności od tabeli.
+  * 8 poziomów: B klasa → A klasa → Okręgówka → IV liga → III liga →
+    II liga → I liga → Ekstraklasa.
+  * PD za każdy mecz i karny, atrybuty: Siła strzału, Celność,
+    Kontrola, Krzywizna, Spokój, Zasięg, Refleks, Czytanie gry.
+
+TECHNOLOGIA:
+  * Silnik: C++23 (rdzeń) z cienkim mostem JNI.
+  * UI: Jetpack Compose + Material 3.
+  * 7 800 polskich miejscowości z OpenStreetMap (ODbL).
+  * Generowane nazwy klubów, generowane wyniki lig.
+  * Deterministyczny seed → identyczne wyniki na każdym urządzeniu.
+
+POLITYKA PRYWATNOŚCI:
+Aplikacja prosi o ZERO uprawnień. Nie zbiera danych. Nie wysyła niczego
+do internetu. Jedyne, co przechowuje, to Twój save gry w bazie na
+urządzeniu.
+
+LICENCJA:
+Kod: GPL-3.0-or-later. Grafiki: CC0. Dane: ODbL.
+Pełne info w repo.

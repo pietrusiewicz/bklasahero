@@ -1,0 +1,48 @@
+# B-Klasa Hero — testy rdzenia C++ na każdym PR.
+# Reprodukuje dokładnie ten sam build co lokalne `cmake --preset host-debug`.
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: host-tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CMake i FetchContent
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/cmake
+            build
+            ${{ github.workspace }}/build/_deps
+          key: cmake-${{ runner.os }}-${{ hashFiles('cmake/BkhDependencies.cmake') }}
+          restore-keys: |
+            cmake-${{ runner.os }}-
+
+      - name: Konfiguracja + build + testy
+        run: |
+          set -euo pipefail
+          cmake --preset host-debug
+          cmake --build --preset host-debug -j2
+          ctest --preset host-debug --output-on-failure
+
+      - name: Weryfikacja ostrzeżeń
+        run: |
+          cmake --build --preset host-debug -j2 2>&1 | \
+            grep -E "warning:" | grep -v "^In file" | grep -v "^$" | \
+            ( ! grep . ) || (echo "WARNINGS:" && grep . | head -20 && exit 1)
+
+      - name: Artefakt: raport testów
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: build/host-debug/Testing/Temporary
+          retention-days: 7

@@ -1,0 +1,46 @@
+# B-Klasa Hero — budowa APK debug na każdym PR (weryfikacja, że Gradle/NDK żyją).
+# Nie podpisuje (debug jest podpisany domyślnym kluczem).
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: android-build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  build-debug:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Konfiguracja JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+               ~/.gradle/caches
+               ~/.gradle/wrapper
+               android/.gradle
+            build
+            android/app/.cxx
+          key: gradle-android-${{ runner.os }}-${{ hashFiles('android/build.gradle.kts', 'android/app/build.gradle.kts') }}
+
+      - name: Kompilacja APK debug
+        run: |
+          cd android
+          ./gradlew --no-daemon :app:assembleDebug \
+            -Pbkh.deps.dir=
+
+      - name: Artefakt: APK debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: bkh-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Polskie tłumaczenie — domyślna lokalizacja aplikacji (patrz PLAN_PRODUKCJI.md).
+  Trzymamy je w jednym pliku, żeby audyt translatorski był łatwy.
+  SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<resources>
+    <string name="app_name">B-Klasa Hero</string>
+    <string name="app_subtitle">Bohater Niedzielnej Ligi</string>
+    <string name="app_loading">Ładowanie…</string>
+    <string name="app_loading_protocol">Protokół v%1$d</string>
+    <string name="app_loading_hint">Przygotowujemy boisko, czyścimy piłkę…</string>
+
+    <string name="home_new_career">Nowa kariera</string>
+    <string name="home_continue_career">Kontynuuj karierę</string>
+
+    <string name="new_career_title">Rozpocznij nową karierę</string>
+    <string name="new_career_nickname">Pseudonim</string>
+    <string name="new_career_search_city">Wyszukaj swoje miasto</string>
+    <string name="new_career_continue">Dalej</string>
+
+    <string name="career_hello">Witaj, %1$s</string>
+    <string name="career_tier">Poziom %1$d</string>
+    <string name="career_progress">Postęp: %1$s</string>
+    <string name="career_next_match">Następny mecz</string>
+    <string name="career_table">Tabela</string>
+    <string name="career_fixtures">Terminarz</string>
+    <string name="career_save">Zapisz</string>
+
+    <string name="match_tap_to_shoot">Kliknij bramkę, żeby strzelić</string>
+    <string name="result_swipe_to_continue">Przesuń, aby kontynuować</string>
+
+    <string name="table_title">Tabela ligi</string>
+    <string name="fixtures_title">Terminarz</string>
+</resources>

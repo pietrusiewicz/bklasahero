@@ -1,0 +1,85 @@
+# F-Droid metadata for pl.bklasahero.
+# Ten plik jest źródłem dla oficjalnego repo fdroiddata
+# (https://gitlab.com/fdroid/fdroiddata).
+#
+# Po akceptacji robota builda w fdroiddata, F-Droid buduje paczkę
+# z tego repo + powyższego metadata. Wzór aktualizujemy przy każdym wydaniu.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+Categories:
+  - Games
+  - Sports
+License: GPL-3.0-or-later
+AuthorName: B-Klasa Hero contributors
+WebSite: https://github.com/bklasahero/bklasahero
+SourceCode: https://github.com/bklasahero/bklasahero
+IssueTracker: https://github.com/bklasahero/bklasahero/issues
+Translation: https://github.com/bklasahero/bklasahero/tree/main/android/app/src/main/res
+
+RepoType: git
+Repo: https://github.com/bklasahero/bklasahero.git
+
+Binaries: https://github.com/bklasahero/bklasahero/releases
+
+AllowedNonFreeDependencies: []
+
+AutoName: B-Klasa Hero
+
+Summary: Penalty shootout + career in Polish football pyramid, fully offline.
+Summary(pl): Rzuty karne + kariera w polskiej piramidzie piłkarskiej, w pełni offline.
+
+Description: |
+    "B-Klasa Hero" (a.k.a. "Sunday League Hero") is a 100% offline football
+    game that lets you:
+
+      * Take 5 penalty kicks against the CPU (and defend 5),
+      * Start a career in the lowest Polish tier (B klasa) and try to climb
+        to Ekstraklasa over eight leagues and nine rounds per season,
+      * Earn XP, upgrade attributes, unlock cosmetics.
+
+    The game engine is written in C++23 (rdzeń) with a thin JNI bridge.
+    No internet, no telemetry, no Google Play Services.
+
+    Built-in data: ~7,800 Polish localities from OpenStreetMap (ODbL).
+    Generated content: club names, league results — all procedural.
+
+Description(pl): |
+    "B-Klasa Hero" (znane też jako "Sunday League Hero") to w pełni
+    offline gra piłkarska:
+
+      * Wykonaj 5 rzutów karnych przeciw CPU (i obroń 5),
+      * Rozpocznij karierę od B klasy i spróbuj awansować do Ekstraklasy
+        przez 8 lig i 9 kolejek na sezon,
+      * Zdobywaj PD, ulepszaj atrybuty, odblokowuj kosmetyki.
+
+    Silnik gry jest napisany w C++23 (rdzeń) z cienkim mostem JNI.
+    Bez internetu, bez telemetrii, bez Google Play Services.
+
+    Dane wbudowane: ~7 800 polskich miejscowości z OpenStreetMap (ODbL).
+    Generowane: nazwy klubów, wyniki ligi — wszystko proceduralne.
+
+# Wersja i stan — aktualizowane przez scripts/bump-version.sh.
+CurrentVersion: 0.1.0
+CurrentVersionCode: 1
+
+# Lista wydań — uzupełniana przy każdym tagu.
+Builds:
+  - versionName: 0.1.0
+    versionCode: 1
+    commit: v0.1.0
+    output: android/app/build/outputs/apk/release/app-release.apk
+    binary: https://github.com/bklasahero/bklasahero/releases/download/v0.1.0/app-release.apk
+    srclibs: []
+    prebuild:
+      - $$mv$$ android/app/src/main/res/mipmap-anydpi-v26/README.md
+        android/app/src/main/res/mipmap-anydpi-v26/.README.md
+
+MaintainerNotes: |
+    * Maintainer notes:* Please keep metadata/pl.bklasahero.yml in sync
+    with this template at every release. AutoUpdater is disabled — F-Droid
+    picks up the version bump from the bump-version.sh script.
+
+    Tests live in `core/tests/` and run via `ctest --preset host-debug`.
+    Fastlane metadata is in `fastlane/metadata/android/` (auto-generated
+    icons in mipmap-anydpi-v26/ are deliberately omitted in this 0.1.0
+    pre-release to avoid icon blockers).

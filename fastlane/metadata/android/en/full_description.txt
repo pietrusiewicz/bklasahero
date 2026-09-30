@@ -1,0 +1,35 @@
+"B-Klasa Hero" (a.k.a. "Sunday League Hero") is a 100% open-source
+football game. No ads, no IAP, no telemetry. No internet.
+
+GAMEPLAY:
+  * Take 5 penalty kicks against the CPU, then defend 5.
+  * Shooting: tap inside the goal frame.
+  * Defending: pick direction and height of your dive.
+  * Ball physics: gravity, drag, Magnus effect, post and crossbar bounces.
+  * Shootout outcome feeds into the league standings.
+
+CAREER:
+  * Start at the bottom of Polish football (B klasa) with a
+    procedurally-generated club.
+  * Each season = 9 rounds × 5 matches (round-robin).
+  * Get promoted or relegated — depending on the table.
+  * 8 tiers: B klasa → A klasa → Okręgówka → IV liga → III liga →
+    II liga → I liga → Ekstraklasa.
+  * XP per match and per kick; attributes: Shot Power, Accuracy,
+    Control, Curve, Composure, Reach, Reflexes, Reading.
+
+TECHNOLOGY:
+  * Engine: C++23 core with a thin JNI bridge.
+  * UI: Jetpack Compose + Material 3.
+  * 7,800 Polish localities from OpenStreetMap (ODbL).
+  * Procedurally-generated club names and match results.
+  * Deterministic seed → identical results on every device.
+
+PRIVACY:
+The app requests ZERO permissions. It doesn't collect data. It doesn't
+send anything over the network. The only thing it stores is your
+single-slot save game in a local database.
+
+LICENSING:
+Code: GPL-3.0-or-later. Artwork: CC0. Data: ODbL.
+Full info in the repo.

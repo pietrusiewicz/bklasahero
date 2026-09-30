@@ -1,0 +1,18 @@
+# Generated artifacts
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+
+# Native build artifacts
+.cxx/
+
+# Captures
+captures/
+.externalNativeBuild/
+
+# Keystores (signed in CI from secret, never in repo)
+*.jks
+*.keystore
+key.properties

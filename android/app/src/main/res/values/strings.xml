@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  B-Klasa Hero — domyślny zestaw napisów (angielski).
+  Plik PL jest w values-pl/, a nie wartości domyślne — wartości domyślne stanowią
+  fallback dla brakujących tłumaczeń w innych lokalizacjach.
+  SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<resources>
+    <string name="app_name">B-Klasa Hero</string>
+    <string name="app_subtitle">Sunday League Hero</string>
+    <string name="app_loading">Loading…</string>
+    <string name="app_loading_protocol">Protocol v%1$d</string>
+    <string name="app_loading_hint">Preparing the pitch, polishing the ball…</string>
+
+    <string name="home_new_career">New career</string>
+    <string name="home_continue_career">Continue career</string>
+
+    <string name="new_career_title">Start a new career</string>
+    <string name="new_career_nickname">Nickname</string>
+    <string name="new_career_search_city">Search your city</string>
+    <string name="new_career_continue">Continue</string>
+
+    <string name="career_hello">Hello, %1$s</string>
+    <string name="career_tier">Tier %1$d</string>
+    <string name="career_progress">Progress: %1$s</string>
+    <string name="career_next_match">Next match</string>
+    <string name="career_table">Table</string>
+    <string name="career_fixtures">Fixtures</string>
+    <string name="career_save">Save</string>
+
+    <string name="match_tap_to_shoot">Tap the goal to shoot</string>
+    <string name="result_swipe_to_continue">Swipe to continue</string>
+
+    <string name="table_title">League table</string>
+    <string name="fixtures_title">Fixtures</string>
+</resources>

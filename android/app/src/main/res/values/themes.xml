@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bazowy motyw — Material 3, inspirowany gazetkami okręgowymi.
+  Kolory konkretne są w ui/theme/Theme.kt (definiowane dynamicznie).
+  SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<resources>
+    <style name="Theme.BKlasaHero" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
