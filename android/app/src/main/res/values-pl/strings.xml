@@ -13,6 +13,9 @@
 
     <string name="home_new_career">Nowa kariera</string>
     <string name="home_continue_career">Kontynuuj karierę</string>
+    <string name="menu_how_to_play">Jak grać?</string>
+    <string name="menu_theme">🌓 Motyw</string>
+    <string name="menu_back">← Wróć do menu</string>
 
     <string name="tutorial_title">Witaj w B-Klasa Hero!</string>
     <string name="tutorial_subtitle">Tak wyglądają rzuty karne:</string>

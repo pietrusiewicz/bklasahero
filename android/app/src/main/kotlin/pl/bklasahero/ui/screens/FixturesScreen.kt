@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,6 +27,7 @@ import kotlinx.serialization.json.put
 import pl.bklasahero.R
 import pl.bklasahero.engine.NativeBridge
 import pl.bklasahero.ui.AppIntent
+import pl.bklasahero.ui.AppScreen
 import pl.bklasahero.ui.AppUiState
 
 private data class FixtureRow(
@@ -60,6 +62,11 @@ fun FixturesScreen(state: AppUiState, dispatch: (AppIntent) -> Unit) {
     }
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        item {
+            TextButton(onClick = { dispatch(AppIntent.SetScreen(AppScreen.Home)) }) {
+                Text(stringResource(R.string.menu_back))
+            }
+        }
         item { Text(stringResource(R.string.fixtures_title), style = MaterialTheme.typography.headlineSmall) }
         items(rows) { row ->
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
