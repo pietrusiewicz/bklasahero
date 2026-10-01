@@ -167,7 +167,7 @@ private fun DrawScope.drawGrass() {
 }
 
 // ---------------------------------------------------------------------------
-// Linie boiska (pole karne, punkt karny)
+// Linie boiska (pole karne, pole bramkowe, punkt karny)
 // ---------------------------------------------------------------------------
 private fun DrawScope.drawFieldLines() {
     val w = size.width
@@ -175,24 +175,43 @@ private fun DrawScope.drawFieldLines() {
     val horizon = h * HORIZON
     val bottom = h * 0.985f
     val cx = w / 2f
-    // linie boczne zbiegające do punktu zbiegu
-    drawLine(LineWhite, Offset(0f, horizon), Offset(cx, bottom), strokeWidth = 2.5f)
-    drawLine(LineWhite, Offset(w, horizon), Offset(cx, bottom), strokeWidth = 2.5f)
-    // pole karne — trapez
-    val boxTop = h * 0.62f
-    val boxHalfTop = w * 0.28f
-    val boxHalfBottom = w * 0.44f
-    val path = Path().apply {
-        moveTo(cx - boxHalfTop, boxTop)
-        lineTo(cx - boxHalfBottom, bottom)
-        lineTo(cx + boxHalfBottom, bottom)
-        lineTo(cx + boxHalfTop, boxTop)
+    val lineW = 3f        // zwykłe linie
+    val boxW = 4.5f       // grubsza linia pól karnych
+
+    // Linie boczne (autowe) — zbiegają do punktu zbiegu na środku horyzontu.
+    drawLine(LineWhite, Offset(0f, horizon), Offset(cx, bottom), strokeWidth = lineW)
+    drawLine(LineWhite, Offset(w, horizon), Offset(cx, bottom), strokeWidth = lineW)
+
+    // --- Pole karne (16,5 m) — trapez, tylna krawędź na linii bramkowej ---
+    val boxBackHalf = w * 0.42f    // tył przy horyzoncie (szerzej niż bramka)
+    val boxFrontHalf = w * 0.48f   // przód bliżej kamery (szerszy)
+    val boxFrontY = h * 0.86f
+    val box = Path().apply {
+        moveTo(cx - boxBackHalf, horizon)
+        lineTo(cx + boxBackHalf, horizon)
+        lineTo(cx + boxFrontHalf, boxFrontY)
+        lineTo(cx - boxFrontHalf, boxFrontY)
         close()
     }
-    drawPath(path, color = LineWhite, style = Stroke(width = 2.5f))
-    // punkt karny
-    drawCircle(color = LineWhite, radius = 4.5f, center = Offset(cx, h * FRONT_Y))
-    // łuk pola karnego (uproszczony) — wygięty od bramki
+    drawPath(box, color = LineWhite, style = Stroke(width = boxW))
+
+    // --- Pole bramkowe (5,5 m) — mniejszy trapez wewnątrz pola karnego ---
+    val sixBackHalf = w * 0.34f
+    val sixFrontHalf = w * 0.38f
+    val sixFrontY = h * 0.63f
+    val six = Path().apply {
+        moveTo(cx - sixBackHalf, horizon)
+        lineTo(cx + sixBackHalf, horizon)
+        lineTo(cx + sixFrontHalf, sixFrontY)
+        lineTo(cx - sixFrontHalf, sixFrontY)
+        close()
+    }
+    drawPath(six, color = LineWhite, style = Stroke(width = boxW))
+
+    // Punkt karny
+    drawCircle(color = LineWhite, radius = 5.5f, center = Offset(cx, h * FRONT_Y))
+
+    // Łuk pola karnego — wygięty od bramki (nad punktem karnym)
     drawArc(
         color = LineWhite,
         startAngle = 0f,
@@ -200,7 +219,7 @@ private fun DrawScope.drawFieldLines() {
         useCenter = false,
         topLeft = Offset(cx - w * 0.09f, h * FRONT_Y - w * 0.09f),
         size = Size(w * 0.18f, w * 0.18f),
-        style = Stroke(width = 2.5f),
+        style = Stroke(width = lineW),
     )
 }
 
