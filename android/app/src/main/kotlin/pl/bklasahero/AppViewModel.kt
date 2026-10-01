@@ -11,13 +11,20 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import pl.bklasahero.data.AppContainer
+import pl.bklasahero.engine.FrameBuffer
 import pl.bklasahero.engine.NativeBridge
 import pl.bklasahero.ui.AppIntent
 import pl.bklasahero.ui.AppScreen
 import pl.bklasahero.ui.AppUiState
+import pl.bklasahero.ui.Scoreboard
 import pl.bklasahero.ui.reduce
 
 class AppViewModel(private val container: AppContainer) : ViewModel() {
@@ -83,10 +90,69 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** Rozpoczyna nowy mecz (rzuty karne) i zeruje tablicę wyników. */
+    fun beginMatch() {
+        viewModelScope.launch {
+            NativeBridge.command(buildJsonObject { put("cmd", "beginMatch") })
+                .onSuccess { data -> _uiState.update { it.applyMatchSetup(data) } }
+                .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
+        }
+    }
+
+    /** Wykonuje rzut karny gracza i aktualizuje tablicę wyników. */
+    fun shoot(aimX: Float, aimY: Float) {
+        viewModelScope.launch {
+            val cmd = buildJsonObject {
+                put("cmd", "shoot")
+                put("aimX", aimX)
+                put("aimY", aimY)
+                put("effort", 0.7f)
+            }
+            NativeBridge.command(cmd)
+                .onSuccess { data ->
+                    FrameBuffer.pull(FloatArray(0))
+                    _uiState.update { it.applyShootResult(data) }
+                }
+                .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
+        }
+    }
+
     class Factory(private val container: AppContainer) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return AppViewModel(container) as T
         }
     }
+}
+
+// --- Parsowanie odpowiedzi meczu (czyste funkcje na AppUiState) ------------
+
+private fun str(obj: JsonObject, key: String): String =
+    obj[key]?.jsonPrimitive?.content ?: ""
+
+private fun AppUiState.applyMatchSetup(data: JsonObject): AppUiState {
+    val setup = data["setup"]?.jsonObject
+    val home = setup?.let { str(it, "playerClubShort") } ?: ""
+    val away = setup?.let { str(it, "opponentShort") } ?: ""
+    val kps = setup?.get("rules")?.jsonObject?.get("kicksPerSide")?.jsonPrimitive?.intOrNull ?: 5
+    return copy(
+        scoreboard = Scoreboard(home = home, away = away, kicksPerSide = kps),
+        screen = AppScreen.Shootout,
+    )
+}
+
+private fun AppUiState.applyShootResult(data: JsonObject): AppUiState {
+    val so = data["shootout"]?.jsonObject
+    val finished = data["finished"]?.jsonPrimitive?.booleanOrNull ?: false
+    val sb = scoreboard
+    return copy(
+        scoreboard = sb.copy(
+            homeScore = so?.get("homeScore")?.jsonPrimitive?.intOrNull ?: sb.homeScore,
+            awayScore = so?.get("awayScore")?.jsonPrimitive?.intOrNull ?: sb.awayScore,
+            homeTaken = so?.get("homeTaken")?.jsonPrimitive?.intOrNull ?: sb.homeTaken,
+            awayTaken = so?.get("awayTaken")?.jsonPrimitive?.intOrNull ?: sb.awayTaken,
+            finished = finished,
+        ),
+        screen = AppScreen.Result,
+    )
 }

@@ -355,6 +355,7 @@ std::string toJson(const MatchSetup& m) {
     j["opponent"] = m.opponent.name;
     j["opponentShort"] = m.opponent.shortName;
     j["playerClub"] = m.playerClub.name;
+    j["playerClubShort"] = m.playerClub.shortName;
     j["playerShootsFirst"] = messageKey(m.playerShootsFirst);
     j["round"] = m.round;
     j["rules"] = {{"firstKicker", messageKey(m.rules.firstKicker)},

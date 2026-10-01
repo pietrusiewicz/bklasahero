@@ -37,6 +37,10 @@
     <string name="match_tap_to_shoot">Kliknij bramkę, żeby strzelić</string>
     <string name="match_start_shootout">Rozpocznij rzuty karne</string>
     <string name="result_swipe_to_continue">Przesuń, aby kontynuować</string>
+    <string name="result_next_kick">Następny rzut</string>
+    <string name="result_finish">Zakończ</string>
+    <string name="scoreboard_round">Rzut %1$d z %2$d</string>
+    <string name="scoreboard_finished">Koniec</string>
 
     <string name="table_title">Tabela ligi</string>
     <string name="fixtures_title">Terminarz</string>

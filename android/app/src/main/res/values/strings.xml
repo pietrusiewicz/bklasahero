@@ -38,6 +38,10 @@
     <string name="match_tap_to_shoot">Tap the goal to shoot</string>
     <string name="match_start_shootout">Start penalty shootout</string>
     <string name="result_swipe_to_continue">Swipe to continue</string>
+    <string name="result_next_kick">Next kick</string>
+    <string name="result_finish">Finish</string>
+    <string name="scoreboard_round">Kick %1$d of %2$d</string>
+    <string name="scoreboard_finished">Finished</string>
 
     <string name="table_title">League table</string>
     <string name="fixtures_title">Fixtures</string>

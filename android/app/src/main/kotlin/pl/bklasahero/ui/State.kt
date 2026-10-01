@@ -20,6 +20,19 @@ data class AppUiState(
     val careerReady: Boolean = false,
     val pendingKick: PendingKick? = null,
     val lastResponse: JsonObject? = null,
+    val scoreboard: Scoreboard = Scoreboard(),
+)
+
+/** Tablica wyników pokazywana na górze ekranu meczu. */
+data class Scoreboard(
+    val home: String = "",
+    val away: String = "",
+    val homeScore: Int = 0,
+    val awayScore: Int = 0,
+    val homeTaken: Int = 0,
+    val awayTaken: Int = 0,
+    val kicksPerSide: Int = 5,
+    val finished: Boolean = false,
 )
 
 data class PendingKick(
@@ -35,6 +48,7 @@ sealed interface AppIntent {
     data object SaveCareer : AppIntent
     data object ToggleTheme : AppIntent
     data object FinishTutorial : AppIntent
+    data class SetScoreboard(val scoreboard: Scoreboard) : AppIntent
 }
 
 /**
@@ -56,4 +70,5 @@ fun reduce(state: AppUiState, intent: AppIntent, container: AppContainer): AppUi
             container.markTutorialSeen()
             state.copy(screen = AppScreen.Home)
         }
+        is AppIntent.SetScoreboard -> state.copy(scoreboard = intent.scoreboard)
     }

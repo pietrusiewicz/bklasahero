@@ -104,16 +104,19 @@ Klucze `outcomeKey`, `woodworkKey`, `zoneKey`, `keeperSideKey` są kluczami ASCI
  "mustScore": true, "pressure": 0.86, "canStillWin": {"home": true, "away": true}}
 ```
 
-### Obiekt `match` (`MatchSetup`)
+### Obiekt `setup` (`MatchSetup`) — zwracany przez `beginMatch`
 
 ```json
-{"matchIndex": 17, "round": 3, "seasonNumber": 1, "leagueLabel": "B klasa · mazowieckie",
- "opponent": { ...club... }, "playerClub": { ...club... },
- "playerShootsFirst": true, "isDecisive": false,
- "playerShooter": {"power": 0.42, "accuracy": 0.38, "composure": 0.36, "curve": 0.30, "consistency": 0.40},
- "playerKeeper": {"reactionTimeS": 0.27, "readingSkill": 0.34, "handlingSkill": 0.36, "diveExtensionM": 2.4},
- "cpuShooter": {...}, "cpuKeeper": {...}}
+{"fixture": {"away": 3, "home": 0, "matchIndex": 17, "round": 3},
+ "isDecisive": false, "leagueLabel": "B klasa · mazowieckie",
+ "opponent": "LKS Orzeł Bartodzieje", "opponentShort": "Orzeł",
+ "playerClub": "KS Błysk Radom", "playerClubShort": "Błysk",
+ "playerShootsFirst": "home", "round": 3, "seasonNumber": 1,
+ "rules": {"firstKicker": "home", "kicksPerSide": 5, "maxSuddenDeathRounds": 10, "suddenDeath": false}}
 ```
+
+Gracz zawsze gra stroną **Home** (`playerClub*`), przeciwnik — **Away** (`opponent*`).
+`fixture.home`/`fixture.away` to indeksy klubów w `career.league.clubs`.
 
 ### Obiekt `career`
 
