@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <charconv>
 #include <cstring>
 #include <sstream>
 #include <unordered_map>
@@ -222,13 +221,54 @@ bool tryParseI64(std::string_view s, i64& out) {
 
 bool tryParseDouble(std::string_view s, f64& out) {
     if (s.empty()) return false;
-    // Użyj std::from_chars dla f64 (C++17) — najszybsze i bez locale.
-    f64 v = 0.0;
-    const char* begin = s.data();
-    const char* end = s.data() + s.size();
-    auto [ptr, ec] = std::from_chars(begin, end, v);
-    if (ec != std::errc() || ptr != end) return false;
-    out = v;
+    // std::from_chars dla double jest w libc++ NDK nadal usunięte (dostępne tylko dla
+    // typów całkowitych), a strtod zależałby od locale procesu. Parsujemy ręcznie —
+    // kropka dziesiętna, deterministycznie i niezależnie od locale (jak tryParseI64).
+    std::size_t i = 0;
+    const bool negative = s[0] == '-';
+    if (s[0] == '-' || s[0] == '+') {
+        ++i;
+        if (i == s.size()) return false;
+    }
+
+    f64 value = 0.0;
+    bool anyDigit = false;
+    for (; i < s.size() && s[i] >= '0' && s[i] <= '9'; ++i) {
+        value = value * 10.0 + static_cast<f64>(s[i] - '0');
+        anyDigit = true;
+    }
+    if (i < s.size() && s[i] == '.') {
+        ++i;
+        f64 scale = 0.1;
+        for (; i < s.size() && s[i] >= '0' && s[i] <= '9'; ++i) {
+            value += static_cast<f64>(s[i] - '0') * scale;
+            scale *= 0.1;
+            anyDigit = true;
+        }
+    }
+    if (!anyDigit) return false;
+
+    // Wykładnik dziesiętny (np. 1.5e-3) — opcjonalny.
+    if (i < s.size() && (s[i] == 'e' || s[i] == 'E')) {
+        ++i;
+        bool expNegative = false;
+        if (i < s.size() && (s[i] == '-' || s[i] == '+')) {
+            expNegative = s[i] == '-';
+            ++i;
+        }
+        if (i == s.size()) return false;
+        int exponent = 0;
+        for (; i < s.size() && s[i] >= '0' && s[i] <= '9'; ++i) {
+            exponent = exponent * 10 + (s[i] - '0');
+            if (exponent > 308) return false;  // poza zakresem double
+        }
+        for (int k = 0; k < exponent; ++k) {
+            value = expNegative ? value / 10.0 : value * 10.0;
+        }
+    }
+
+    if (i != s.size()) return false;
+    out = negative ? -value : value;
     return true;
 }
 
