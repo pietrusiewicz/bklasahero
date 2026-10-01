@@ -64,7 +64,7 @@ CurrentVersionCode: 1
 Builds:
   - versionName: 0.1.0
     versionCode: 1
-    commit: COMMIT_HASH_TBD
+    commit: 14d22ca777f6a3c91c29d576251a8219fa233959
     # Gradle projekt żyje w android/ (rdzeń C++ jest w korzeniu repo).
     subdir: android
     gradle: yes
