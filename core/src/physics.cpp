@@ -209,7 +209,7 @@ BallFlight simulateBallFlight(const ShotInput& input, const PhysicsParams& param
     const f64 lineZ = static_cast<f64>(pitch::kPenaltyDistance);
 
     result.maxSpeedMs = length(state.velocityMs);
-    f64 sampleAccum = 0.f64;
+    f64 sampleAccum = 0.0;
 
     if (recordSamples) {
         result.samples.push_back({0.0, state.positionM, state.velocityMs});
