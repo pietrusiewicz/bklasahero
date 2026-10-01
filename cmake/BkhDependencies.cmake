@@ -15,6 +15,14 @@
 include_guard(GLOBAL)
 include(FetchContent)
 
+# DOWNLOAD_EXTRACT_TIMESTAMP (CMP0135) wymaga CMake >= 3.24. Android SDK domyślnie
+# udostępnia CMake 3.22.1 (minimum dla NDK r27), więc opcję dodajemy warunkowo.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+    set(BKH_FETCH_TIMESTAMP DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+else()
+    set(BKH_FETCH_TIMESTAMP)
+endif()
+
 set(BKH_GTEST_VERSION  "1.18.0" CACHE STRING "Wersja GoogleTest")
 set(BKH_GTEST_URL      "https://github.com/google/googletest/archive/refs/tags/v${BKH_GTEST_VERSION}.tar.gz")
 set(BKH_GTEST_SHA256   "6e3191c1455468b3fc35a417fb565c1c5071aee1b7e7f85e30cf48a98d37d8b5")
@@ -37,7 +45,7 @@ else()
     FetchContent_Declare(json
             URL "${BKH_JSON_URL}"
             URL_HASH "SHA256=${BKH_JSON_SHA256}"
-            DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+            ${BKH_FETCH_TIMESTAMP})
     set(JSON_BuildTests OFF CACHE INTERNAL "")
     set(JSON_Install OFF CACHE INTERNAL "")
     FetchContent_MakeAvailable(json)
@@ -64,7 +72,7 @@ function(bkh_add_googletest)
     FetchContent_Declare(googletest
             URL "${BKH_GTEST_URL}"
             URL_HASH "SHA256=${BKH_GTEST_SHA256}"
-            DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+            ${BKH_FETCH_TIMESTAMP})
     set(BUILD_GMOCK OFF CACHE INTERNAL "")
     set(INSTALL_GTEST OFF CACHE INTERNAL "")
     set(gtest_force_shared_crt ON CACHE INTERNAL "")
