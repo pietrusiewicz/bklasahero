@@ -26,12 +26,8 @@ import pl.bklasahero.ui.render.MatchRenderer
 
 @Composable
 fun MatchScreen(state: AppUiState, viewModel: AppViewModel) {
-    // Po wejściu na ekran — zaciągamy klatkę z mostka (jeśli jest).
-    LaunchedEffect(state.screen) {
-        if (FrameBuffer.floats.isEmpty()) {
-            FrameBuffer.pull(FloatArray(0))
-        }
-    }
+    // Po wejściu na ekran — czysty podgląd boiska (bez starej animacji).
+    LaunchedEffect(state.screen) { FrameBuffer.clear() }
     Box(modifier = Modifier.fillMaxSize()) {
         MatchRenderer(state)
         ScoreboardBar(state.scoreboard)

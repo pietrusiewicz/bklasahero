@@ -14,6 +14,7 @@ ShotInput PlayerShotInput::toShotInput(const ShooterProfile& profile) const {
     ShotInput out;
     out.startPosM = ShotInput::defaultStart();
     out.aimM = aimM;
+    out.effort = clamp(effort, 0.0, 1.0);
     out.speedMs = profile.shotSpeed(effort);
     const f64 maxSideSpin = 30.0 + 30.0 * profile.curve;   // rad/s
     const f64 maxTopSpin  = 18.0 + 20.0 * profile.curve;
@@ -87,8 +88,14 @@ ShotExecution executeShot(const ShotInput& intent, const ShotContext& ctx, Rando
         exe.resolution.zone = zoneOf(intent.aimM);
     }
 
-    // 2. Błąd wykonania.
-    const ExecutionError err = rollExecutionError(ctx.shooter, ctx.pressure, rng);
+    // 2. Błąd wykonania. Mocniejszy strzał gracza = trudniejszy do kontroli
+    //    (kompromis siła / precyzja — dzięki temu pasek mocy ma sens).
+    ExecutionError err = rollExecutionError(ctx.shooter, ctx.pressure, rng);
+    if (!ctx.cpuShoots) {
+        const f64 effortFactor = 0.55 + 0.75 * clamp(intent.effort, 0.0, 1.0);
+        err.dxM *= effortFactor;
+        err.dyM *= effortFactor;
+    }
     actualIntent = applyExecutionError(actualIntent, err, ctx.shooter.curve);
 
     // 3. Plan bramkarza.

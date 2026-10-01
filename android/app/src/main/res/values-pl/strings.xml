@@ -16,7 +16,8 @@
 
     <string name="tutorial_title">Witaj w B-Klasa Hero!</string>
     <string name="tutorial_subtitle">Tak wyglądają rzuty karne:</string>
-    <string name="tutorial_step_shoot">Kliknij bramkę, aby celować i strzelać</string>
+    <string name="tutorial_step_shoot">Przeciągnij palcem po bramce, aby wycelować — przytrzymaj dłużej, żeby strzelić mocniej</string>
+    <string name="tutorial_step_defend">W obronie przesuń palcem w stronę, w którą chcesz zanurkować</string>
     <string name="tutorial_step_aim">Mierz w rogi — trudniej je obronić</string>
     <string name="tutorial_step_match">Wygrywaj mecze i pnij się w tabeli ligi</string>
     <string name="tutorial_start">Zacznij grać</string>
@@ -34,13 +35,27 @@
     <string name="career_fixtures">Terminarz</string>
     <string name="career_save">Zapisz</string>
 
-    <string name="match_tap_to_shoot">Kliknij bramkę, żeby strzelić</string>
+    <string name="match_tap_to_shoot">Przygotuj się na serię rzutów karnych</string>
     <string name="match_start_shootout">Rozpocznij rzuty karne</string>
     <string name="result_swipe_to_continue">Przesuń, aby kontynuować</string>
     <string name="result_next_kick">Następny rzut</string>
-    <string name="result_finish">Zakończ</string>
+    <string name="result_finish">Zakończ mecz</string>
+    <string name="result_win">WYGRYWASZ RZUTY KARNE!</string>
+    <string name="result_lose">PRZEGRYWASZ RZUTY KARNE</string>
+    <string name="result_draw">REMIS</string>
     <string name="scoreboard_round">Rzut %1$d z %2$d</string>
     <string name="scoreboard_finished">Koniec</string>
+    <string name="scoreboard_sudden_death">Nagła śmierć!</string>
+    <string name="shootout_shoot_hint">Przeciągnij palcem po bramce, aby wycelować · przytrzymaj dłużej = mocniejszy strzał</string>
+    <string name="shootout_defend_hint">Przesuń palcem w stronę, w którą nurkujesz (w górę = wysoki skok)</string>
+    <string name="outcome_goal_shooter">GOL!</string>
+    <string name="outcome_saved_shooter">OBRONIONE!</string>
+    <string name="outcome_miss_shooter">PUDŁO!</string>
+    <string name="outcome_post_in">SŁUPEK… I GOL!</string>
+    <string name="outcome_post_out">SŁUPEK!</string>
+    <string name="outcome_goal_keeper">GOL DLA RYWALA!</string>
+    <string name="outcome_saved_keeper">WSPANIAŁA OBRONA!</string>
+    <string name="outcome_miss_keeper">RYWAL PUDŁUJE!</string>
 
     <string name="table_title">Tabela ligi</string>
     <string name="fixtures_title">Terminarz</string>

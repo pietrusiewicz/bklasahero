@@ -51,6 +51,7 @@ fun TutorialScreen(state: AppUiState, dispatch: (AppIntent) -> Unit) {
                 )
 
                 TutorialRow("🥅", stringResource(R.string.tutorial_step_shoot))
+                TutorialRow("🧤", stringResource(R.string.tutorial_step_defend))
                 TutorialRow("🎯", stringResource(R.string.tutorial_step_aim))
                 TutorialRow("🏆", stringResource(R.string.tutorial_step_match))
 

@@ -7,6 +7,7 @@ package pl.bklasahero.ui
 import androidx.compose.runtime.Composable
 import pl.bklasahero.AppViewModel
 import pl.bklasahero.ui.screens.CareerScreen
+import pl.bklasahero.ui.screens.DefendScreen
 import pl.bklasahero.ui.screens.FixturesScreen
 import pl.bklasahero.ui.screens.HomeScreen
 import pl.bklasahero.ui.screens.LoadingScreen
@@ -28,8 +29,8 @@ fun AppNavGraph(state: AppUiState, viewModel: AppViewModel) {
         AppScreen.Career -> CareerScreen(state, viewModel)
         AppScreen.Match -> MatchScreen(state, viewModel)
         AppScreen.Shootout -> ShootoutScreen(state, viewModel)
-        AppScreen.Defend -> MatchScreen(state, viewModel)
-        AppScreen.Result -> ResultScreen(state, dispatch)
+        AppScreen.Defend -> DefendScreen(state, viewModel)
+        AppScreen.Result -> ResultScreen(state, viewModel)
         AppScreen.Table -> TableScreen(state, dispatch)
         AppScreen.Fixtures -> FixturesScreen(state, dispatch)
     }

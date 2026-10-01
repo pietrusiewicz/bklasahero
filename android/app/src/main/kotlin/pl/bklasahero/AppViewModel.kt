@@ -90,28 +90,77 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    /** Rozpoczyna nowy mecz (rzuty karne) i zeruje tablicę wyników. */
+    /** Rozpoczyna nowy mecz (rzuty karne), zeruje tablicę i wybiera pierwszą turę. */
     fun beginMatch() {
+        FrameBuffer.clear()
         viewModelScope.launch {
             NativeBridge.command(buildJsonObject { put("cmd", "beginMatch") })
-                .onSuccess { data -> _uiState.update { it.applyMatchSetup(data) } }
+                .onSuccess { data ->
+                    _uiState.update { it.applyMatchSetup(data) }
+                    refreshTurn()
+                }
                 .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
         }
     }
 
-    /** Wykonuje rzut karny gracza i aktualizuje tablicę wyników. */
-    fun shoot(aimX: Float, aimY: Float) {
+    /** matchState → kto wykonuje następny rzut: gracz strzela (Shootout) albo broni (Defend). */
+    fun refreshTurn() {
+        viewModelScope.launch {
+            NativeBridge.command(buildJsonObject { put("cmd", "matchState") })
+                .onSuccess { data -> _uiState.update { it.applyTurn(data) } }
+                .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
+        }
+    }
+
+    /** Rzut karny gracza. `effort` [0.45..1] = siła (im mocniej, tym mniej precyzyjnie). */
+    fun shoot(aimX: Float, aimY: Float, effort: Float) {
         viewModelScope.launch {
             val cmd = buildJsonObject {
                 put("cmd", "shoot")
                 put("aimX", aimX)
                 put("aimY", aimY)
-                put("effort", 0.7f)
+                put("effort", effort)
             }
             NativeBridge.command(cmd)
                 .onSuccess { data ->
                     FrameBuffer.pull(FloatArray(0))
-                    _uiState.update { it.applyShootResult(data) }
+                    _uiState.update { it.applyKickResult(data, "shooter") }
+                }
+                .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
+        }
+    }
+
+    /** Obrona gracza — rzut przeciwnika. side: Left/Center/Right, height: Low/Mid/High. */
+    fun dive(side: String, height: String, timingErrorS: Float = 0f) {
+        viewModelScope.launch {
+            val cmd = buildJsonObject {
+                put("cmd", "dive")
+                put("side", side)
+                put("height", height)
+                put("timingErrorS", timingErrorS)
+            }
+            NativeBridge.command(cmd)
+                .onSuccess { data ->
+                    FrameBuffer.pull(FloatArray(0))
+                    _uiState.update { it.applyKickResult(data, "keeper") }
+                }
+                .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
+        }
+    }
+
+    /** Po animacji rzutu: następna tura albo zakończenie meczu. */
+    fun continueAfterKick() {
+        FrameBuffer.clear()
+        if (_uiState.value.scoreboard.finished) finishMatch() else refreshTurn()
+    }
+
+    /** Zapisuje wynik meczu w lidze i wraca do menu kariery. */
+    fun finishMatch() {
+        viewModelScope.launch {
+            NativeBridge.command(buildJsonObject { put("cmd", "finishMatch") })
+                .onSuccess {
+                    FrameBuffer.clear()
+                    _uiState.update { it.copy(screen = AppScreen.Career, lastOutcomeKey = null) }
                 }
                 .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
         }
@@ -127,8 +176,30 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
 
 // --- Parsowanie odpowiedzi meczu (czyste funkcje na AppUiState) ------------
 
+private val outcomeJson = kotlinx.serialization.json.Json {
+    ignoreUnknownKeys = true
+    isLenient = true
+}
+
 private fun str(obj: JsonObject, key: String): String =
     obj[key]?.jsonPrimitive?.content ?: ""
+
+/** Pole w stylu `kick`/`resolution` jest w protokole STRINGIEM z JSON-em w środku. */
+private fun nestedJson(data: JsonObject, key: String): JsonObject? {
+    val raw = data[key]?.jsonPrimitive?.content ?: return null
+    return try {
+        outcomeJson.parseToJsonElement(raw).jsonObject
+    } catch (e: Exception) {
+        null
+    }
+}
+
+private fun scoreboardFrom(sb: Scoreboard, so: JsonObject?): Scoreboard = sb.copy(
+    homeScore = so?.get("homeScore")?.jsonPrimitive?.intOrNull ?: sb.homeScore,
+    awayScore = so?.get("awayScore")?.jsonPrimitive?.intOrNull ?: sb.awayScore,
+    homeTaken = so?.get("homeTaken")?.jsonPrimitive?.intOrNull ?: sb.homeTaken,
+    awayTaken = so?.get("awayTaken")?.jsonPrimitive?.intOrNull ?: sb.awayTaken,
+)
 
 private fun AppUiState.applyMatchSetup(data: JsonObject): AppUiState {
     val setup = data["setup"]?.jsonObject
@@ -137,22 +208,31 @@ private fun AppUiState.applyMatchSetup(data: JsonObject): AppUiState {
     val kps = setup?.get("rules")?.jsonObject?.get("kicksPerSide")?.jsonPrimitive?.intOrNull ?: 5
     return copy(
         scoreboard = Scoreboard(home = home, away = away, kicksPerSide = kps),
-        screen = AppScreen.Shootout,
+        lastOutcomeKey = null,
+        lastKickRole = null,
     )
 }
 
-private fun AppUiState.applyShootResult(data: JsonObject): AppUiState {
+/** matchState → routing na strzał albo obronę (gracz zawsze = side.home). */
+private fun AppUiState.applyTurn(data: JsonObject): AppUiState {
+    val kicker = data["nextKicker"]?.jsonPrimitive?.content ?: ""
+    val finished = data["finished"]?.jsonPrimitive?.booleanOrNull ?: false
+    return copy(
+        scoreboard = scoreboardFrom(scoreboard, data["shootout"]?.jsonObject).copy(finished = finished),
+        screen = if (kicker == "side.away") AppScreen.Defend else AppScreen.Shootout,
+    )
+}
+
+/** Odpowiedź shoot/dive → aktualizacja tablicy + przejście na ekran wyniku. */
+private fun AppUiState.applyKickResult(data: JsonObject, role: String): AppUiState {
     val so = data["shootout"]?.jsonObject
     val finished = data["finished"]?.jsonPrimitive?.booleanOrNull ?: false
-    val sb = scoreboard
+    val resolution = nestedJson(data, "resolution")
+    val outcomeKey = resolution?.get("outcome")?.jsonPrimitive?.content
     return copy(
-        scoreboard = sb.copy(
-            homeScore = so?.get("homeScore")?.jsonPrimitive?.intOrNull ?: sb.homeScore,
-            awayScore = so?.get("awayScore")?.jsonPrimitive?.intOrNull ?: sb.awayScore,
-            homeTaken = so?.get("homeTaken")?.jsonPrimitive?.intOrNull ?: sb.homeTaken,
-            awayTaken = so?.get("awayTaken")?.jsonPrimitive?.intOrNull ?: sb.awayTaken,
-            finished = finished,
-        ),
+        scoreboard = scoreboardFrom(scoreboard, so).copy(finished = finished),
+        lastOutcomeKey = outcomeKey,
+        lastKickRole = role,
         screen = AppScreen.Result,
     )
 }

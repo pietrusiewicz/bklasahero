@@ -59,6 +59,7 @@ struct PhysicsParams {
 struct ShotInput {
     Vec2 aimM{};          // cel w płaszczyźnie bramki: x = bok [m], y = wysokość [m]
     f64 speedMs = 22.0;   // prędkość początkowa środka piłki [m/s]
+    f64 effort = 0.0;     // siła strzału [0..1] — skaluje błąd wykonania (moc vs precyzja)
     f64 sideSpinRps = 0.0;   // rotacja boczna [rad/s], >0 = w prawo strzelca (fałsz prawy)
     f64 topSpinRps = 0.0;    // >0 = topspin (dociąża), <0 = backspin (podcina)
     Vec3 startPosM{0.0, pitch::kBallRadius, 0.0};  // punkt karny

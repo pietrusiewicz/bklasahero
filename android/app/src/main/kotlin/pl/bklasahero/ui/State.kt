@@ -21,6 +21,8 @@ data class AppUiState(
     val pendingKick: PendingKick? = null,
     val lastResponse: JsonObject? = null,
     val scoreboard: Scoreboard = Scoreboard(),
+    val lastOutcomeKey: String? = null,
+    val lastKickRole: String? = null,
 )
 
 /** Tablica wyników pokazywana na górze ekranu meczu. */

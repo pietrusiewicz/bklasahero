@@ -64,11 +64,13 @@ fun ScoreboardBar(scoreboard: Scoreboard) {
             }
             val taken = scoreboard.homeTaken + scoreboard.awayTaken
             val total = scoreboard.kicksPerSide * 2
+            val suddenDeath = scoreboard.homeTaken >= scoreboard.kicksPerSide &&
+                scoreboard.awayTaken >= scoreboard.kicksPerSide
             Text(
-                text = if (scoreboard.finished) {
-                    stringResource(R.string.scoreboard_finished)
-                } else {
-                    stringResource(R.string.scoreboard_round, (taken + 1).coerceAtMost(total), total)
+                text = when {
+                    scoreboard.finished -> stringResource(R.string.scoreboard_finished)
+                    suddenDeath -> stringResource(R.string.scoreboard_sudden_death)
+                    else -> stringResource(R.string.scoreboard_round, (taken + 1).coerceAtMost(total), total)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFFB9C6D4),

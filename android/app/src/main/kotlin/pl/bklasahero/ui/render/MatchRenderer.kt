@@ -52,14 +52,14 @@ private val BallWhite = Color(0xFFFBFBFB)
 private val BallShade = Color(0xFFB9BEC4)
 
 // --- stałe perspektywy (w ułamkach ekranu) ---
-private const val HORIZON_Y = 0.26f     // horyzont / punkt zbiegu (wysokość oczu)
-private const val GOAL_TOP = 0.30f      // górna krawędź bramki (poprzeczka)
-private const val GOAL_LINE_Y = 0.52f   // linia bramkowa (dół bramki, cel piłki)
-private const val GOAL_LEFT = 0.19f     // lewy słupek (ułamek szerokości)
-private const val GOAL_RIGHT = 0.81f    // prawy słupek
-private const val FRONT_Y = 0.80f       // punkt karny (z=0) na ekranie
-private const val SHOOTER_Y = 0.90f     // strzelec (bliżej kamery)
-private const val Z_MAX = 11f           // głębokość: 0 = punkt karny, 11 = linia bramkowa
+internal const val HORIZON_Y = 0.26f     // horyzont / punkt zbiegu (wysokość oczu)
+internal const val GOAL_TOP = 0.30f      // górna krawędź bramki (poprzeczka)
+internal const val GOAL_LINE_Y = 0.52f   // linia bramkowa (dół bramki, cel piłki)
+internal const val GOAL_LEFT = 0.19f     // lewy słupek (ułamek szerokości)
+internal const val GOAL_RIGHT = 0.81f    // prawy słupek
+private const val FRONT_Y = 0.80f        // punkt karny (z=0) na ekranie
+private const val SHOOTER_Y = 0.90f      // strzelec (bliżej kamery)
+private const val Z_MAX = 11f            // głębokość: 0 = punkt karny, 11 = linia bramkowa
 
 // Skala figur — większe postacie na ekranie.
 private fun figureScale(h: Float): Float = (h / 1150f).coerceIn(0.9f, 2.6f)
@@ -369,13 +369,15 @@ private fun DrawScope.drawKeeper(t: Float) {
     val scale = figureScale(h)
     val r = 22f * scale
 
-    rotate(degrees = dive * 40f, pivot = center) {
-        // ręce (z rękawicami) — rozłożone przy nurkowaniu
-        val armSpread = 40f * scale * (1f + dive)
-        drawLine(KeeperJersey, center, Offset(center.x - armSpread, center.y - 12f * scale), strokeWidth = 10f * scale, cap = StrokeCap.Round)
-        drawLine(KeeperJersey, center, Offset(center.x + armSpread, center.y - 12f * scale), strokeWidth = 10f * scale, cap = StrokeCap.Round)
-        drawCircle(KeeperGlove, radius = 9f * scale, center = Offset(center.x - armSpread, center.y - 12f * scale))
-        drawCircle(KeeperGlove, radius = 9f * scale, center = Offset(center.x + armSpread, center.y - 12f * scale))
+    // Nurkowanie: sylwetka obraca się niemal do poziomu i wyciąga ręce do piłki.
+    rotate(degrees = dive * 78f, pivot = center) {
+        // ręce (z rękawicami) — rozłożone i wyciągnięte przy nurkowaniu
+        val armSpread = 44f * scale * (1f + dive)
+        val armLift = 14f * scale * (1f - dive)
+        drawLine(KeeperJersey, center, Offset(center.x - armSpread, center.y - armLift), strokeWidth = 10f * scale, cap = StrokeCap.Round)
+        drawLine(KeeperJersey, center, Offset(center.x + armSpread, center.y - armLift), strokeWidth = 10f * scale, cap = StrokeCap.Round)
+        drawCircle(KeeperGlove, radius = 9f * scale, center = Offset(center.x - armSpread, center.y - armLift))
+        drawCircle(KeeperGlove, radius = 9f * scale, center = Offset(center.x + armSpread, center.y - armLift))
         // nogi
         drawLine(Boot, center, Offset(center.x - 14f * scale, center.y + 34f * scale), strokeWidth = 11f * scale, cap = StrokeCap.Round)
         drawLine(Boot, center, Offset(center.x + 14f * scale, center.y + 34f * scale), strokeWidth = 11f * scale, cap = StrokeCap.Round)

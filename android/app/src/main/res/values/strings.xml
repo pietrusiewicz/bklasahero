@@ -17,7 +17,8 @@
 
     <string name="tutorial_title">Welcome to B-Klasa Hero!</string>
     <string name="tutorial_subtitle">Here\'s how a penalty shootout works:</string>
-    <string name="tutorial_step_shoot">Tap the goal to aim and shoot</string>
+    <string name="tutorial_step_shoot">Drag across the goal to aim — hold longer for a harder shot</string>
+    <string name="tutorial_step_defend">When defending, swipe the way you want to dive</string>
     <string name="tutorial_step_aim">Aim for the corners — they\'re harder to save</string>
     <string name="tutorial_step_match">Win matches and climb the league table</string>
     <string name="tutorial_start">Start playing</string>
@@ -35,13 +36,27 @@
     <string name="career_fixtures">Fixtures</string>
     <string name="career_save">Save</string>
 
-    <string name="match_tap_to_shoot">Tap the goal to shoot</string>
+    <string name="match_tap_to_shoot">Get ready for the shootout</string>
     <string name="match_start_shootout">Start penalty shootout</string>
     <string name="result_swipe_to_continue">Swipe to continue</string>
     <string name="result_next_kick">Next kick</string>
-    <string name="result_finish">Finish</string>
+    <string name="result_finish">Finish match</string>
+    <string name="result_win">YOU WON THE SHOOTOUT!</string>
+    <string name="result_lose">YOU LOST THE SHOOTOUT</string>
+    <string name="result_draw">IT\'S A DRAW</string>
     <string name="scoreboard_round">Kick %1$d of %2$d</string>
     <string name="scoreboard_finished">Finished</string>
+    <string name="scoreboard_sudden_death">Sudden death!</string>
+    <string name="shootout_shoot_hint">Drag on the goal to aim · hold longer for a harder shot</string>
+    <string name="shootout_defend_hint">Swipe the way you want to dive (up = high)</string>
+    <string name="outcome_goal_shooter">GOAL!</string>
+    <string name="outcome_saved_shooter">SAVED BY THE KEEPER!</string>
+    <string name="outcome_miss_shooter">MISSED!</string>
+    <string name="outcome_post_in">OFF THE POST… IN!</string>
+    <string name="outcome_post_out">OFF THE POST!</string>
+    <string name="outcome_goal_keeper">GOAL FOR THEM!</string>
+    <string name="outcome_saved_keeper">WHAT A SAVE!</string>
+    <string name="outcome_miss_keeper">THEY MISSED!</string>
 
     <string name="table_title">League table</string>
     <string name="fixtures_title">Fixtures</string>
