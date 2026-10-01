@@ -44,7 +44,9 @@ target_link_libraries(bkh_bridge PRIVATE bkh::core)
 if(ANDROID)
     find_library(log-lib log)
     find_library(android-lib android)
-    target_link_libraries(bkh_bridge PRIVATE ${log-lib} ${android-lib})
+    # Jawne linkowanie libc++ (c++_static zgodnie z -DANDROID_STL=c++_static).
+    # Nie polegamy na fladze -static-libstdc++ z CMake, bo clang ją ignoruje.
+    target_link_libraries(bkh_bridge PRIVATE ${log-lib} ${android-lib} c++_static c++abi)
     target_compile_definitions(bkh_bridge PRIVATE BKH_PLATFORM_ANDROID=1)
 else()
     # Build mostka poza Androidem (np. test integracyjny na hoście) — wymaga jni.h z JDK.
