@@ -811,7 +811,9 @@ std::string Facade::command(std::string_view jsonCommand) {
     try {
         auto r = impl_->dispatch(cmd, rest);
         if (!r) return dump(errPayload(r.error().code, r.error().message));
-        return dump(okPayload(std::move(r.value())));
+        // dispatch() zwraca już kompletny envelope {"ok":true,"data":...} —
+        // nie opakowujemy go drugi raz.
+        return dump(std::move(r.value()));
     } catch (const std::exception& e) {
         return dump(errPayload("error.internal", std::string("exception: ") + e.what()));
     } catch (...) {
