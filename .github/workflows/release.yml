@@ -34,7 +34,12 @@ jobs:
           java-version: 17
 
       - name: Konfiguracja Android SDK
-        uses: android-actions/setup-android@v3
+        run: |
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          CTBIN=$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -type f -name sdkmanager 2>/dev/null | head -1)
+          if [[ -n "$CTBIN" ]]; then echo "${CTBIN%/sdkmanager}" >> "$GITHUB_PATH"; fi
 
       - name: Instalacja platform + build-tools + NDK
         run: |
