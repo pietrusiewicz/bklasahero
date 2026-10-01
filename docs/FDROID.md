@@ -1,30 +1,26 @@
 # B-Klasa Hero — publikacja na F-Droid
 
-F-Droid buduje każdą paczkę z metadanych w `metadata/<applicationId>.yml`
-oraz kodu źródłowego z Git taga. Poniżej pełna ścieżka od taga do paczki w
-repozytorium.
+F-Droid buduje każdą paczkę z kodu źródłowego (git tag/commit) + metadanych
+`metadata/pl.bklasahero.yml`. Poniżej pełna ścieżka.
 
-## Jednorazowa konfiguracja (po stronie opiekuna)
+## Wymagania wstępne
 
-1. **Konto na https://f-droid.org** — wniosek przez https://f-droid.org/contact.
-2. **Wpis `fdroiddata` w fork'u** — plik `metadata/pl.bklasahero.yml`.
-3. **Włączenie robota builda** — robot włącza aplikację po pierwszym PR
-   akceptowanym w `fdroiddata`.
+1. Publiczne repo: https://github.com/pietrusiewicz/bklasahero (klon `https://`, bez auth).
+2. Tag dla każdego wydania: `v0.1.0`, `v0.2.0`, …
+3. Licencja FOSS (GPL-3.0-or-later) + brak zależności non-free — spełnione.
 
-## Co trzeba wysłać do repo `fdroiddata`
+## Jak działa build na serwerze F-Droid
 
-Plik `metadata/pl.bklasahero.yml` w tym repo to **szablon**.
-Oficjalną kopię trzeba wstawić do `fdroiddata` PR-em, razem z:
-
-- `Builds:` — zwykle 1 wpis per ABI (tu mamy `arm64-v8a` + `armeabi-v7a`).
-- `Allowed-non-free-uses:` — nie mamy żadnych.
-- `Auto-Updater:` — `Maintainer: ...`.
+- `Repo:` → klon repo; `commit:` (pełny hash taga) → checkout; `subdir: android` → `gradle assembleRelease`.
+- Release jest **niepodpisany** — F-Droid podpisuje własnym kluczem.
+- Zależność rdzenia `nlohmann/json` (MIT) pobiera CMake `FetchContent` z weryfikacją SHA256 (build serwer ma sieć, jak przy zależnościach Maven).
+- `versionCode` musi rosnąć monotonicznie — nie resetuj go.
 
 ## Procedura wydania
 
 ```bash
-# 1. Bump wersji.
-scripts/bump-version.sh 0.2.0
+# 1. Bump wersji (versionName + versionCode).
+scripts/bump-version.sh 0.2.0 2
 
 # 2. Commit + tag.
 git add -A
@@ -32,38 +28,38 @@ git commit -m "Wydanie 0.2.0"
 git tag v0.2.0
 git push origin main --tags
 
-# 3. CI buduje release (workflow: .github/workflows/release.yml).
-#    → APK trafia do GitHub Releases.
+# 3. Pełny hash taga wpisz do metadata jako commit:.
+git rev-parse v0.2.0   # → <hash>
 
-# 4. Fork fdroiddata → kopia metadata/pl.bklasahero.yml →
-#    bump Version i CurrentVersion → PR.
+# 4. W metadata/pl.bklasahero.yml dopisz wpis w Builds: z commit: <hash>.
+#    (CurrentVersion / CurrentVersionCode już zaktualizował bump-version.sh)
 
-# 5. Po akceptacji robota builda, F-Droid publikuje wersję w 24-72 h.
+# 5. Fork fdroiddata → skopiuj metadata/pl.bklasahero.yml → MR
+#    (label "New App" przy pierwszym zgłoszeniu, potem "Update").
 ```
 
 ## Co obserwuje robot F-Droid
 
-- Czy `versionCode` rośnie monotonicznie — nie resetuj go!
-- Czy APK się buduje bez zastrzeżonych bibliotek (`non-free`).
-- Czy podpis jest stały (ten sam klucz co poprzednio).
-- Czy `Builds:` matchuje tagi.
+- Czy `versionCode` rośnie monotonicznie.
+- Czy APK buduje się bez bibliotek non-free.
+- Czy `commit:` to pełny, niezmienny hash (nie tag / nie nazwa brancha).
+- Czy `gradle:` jest ustawione — bez tego build uznany za „manualny" i nie powstanie.
 
-## Konwencja numerów wersji
+## Testowanie metadata przed MR (opcjonalne)
 
-`MAJOR.MINOR.PATCH` semver, ale bez `0.x` nie oznacza "niestabilne" — to aplikacja
-offline, więc nawet `1.0` nie zmienia kontraktu. Trzymamy się:
+Zainstaluj `fdroidserver` i uruchom w kontenerze buildserver:
 
-- **MAJOR** — bump przy niezgodnej wersji save'a (konieczna migracja).
-- **MINOR** — bump przy nowej warstwie funkcjonalnej (np. nowa liga).
-- **PATCH** — bump przy poprawkach balansu / tłumaczeń / drobnych bugach.
+```bash
+fdroid readmeta
+fdroid lint pl.bklasahero
+fdroid build pl.bklasahero
+```
 
-## Diagnostyka problemów z F-Droid
-
-Najczęstsze błędy:
+## Diagnostyka
 
 | Symptom | Rozwiązanie |
 |---|---|
-| `Can't build app pl.bklasahero` | Sprawdź log robota, zwykle brakuje zależności w `BkhDependencies.cmake` |
-| `No update from 0.1.0 (1) to 0.1.0 (1)` | Nie bumpnąłeś `versionCode` |
-| `Bad signature` | NIE zmieniaj klucza po pierwszej wersji w repo. Jeśli musisz, koordynuj z F-Droid na forum |
-| `Missing binary blob` | Każdy asset musi być pobrany w buildzie (tu: miejsca OSM) |
+| `Can't build app pl.bklasahero` | Sprawdź log robota; zwykle zły `output:` albo brak zależności |
+| `No update from X to X` | Nie bumpnąłeś `versionCode` |
+| `Bad signature` | Nie zmieniaj klucza F-Droid po pierwszej wersji |
+| FetchContent nie pobiera | Sprawdź SHA256 w `cmake/BkhDependencies.cmake` / sieć buildserwera |

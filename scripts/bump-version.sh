@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
-# B-Klasa Hero — bump wersji rdzenia (BKH_VERSION_*) i aplikacji (versionCode/Name).
-# Użycie: scripts/bump-version.sh 0.2.0
+# B-Klasa Hero — bump wersji rdzenia i aplikacji (versionName + versionCode).
+#
+# Użycie:
+#   scripts/bump-version.sh 0.2.0       # versionCode = poprzedni + 1
+#   scripts/bump-version.sh 0.2.0 2     # jawnie podany versionCode
+#
+# Aktualizuje:
+#   1. CMakeLists.txt (korzeń) — project(bkh VERSION x.y.z)
+#   2. android/app/build.gradle.kts — domyślne versionName / versionCode
+#   3. metadata/pl.bklasahero.yml — CurrentVersion / CurrentVersionCode
+#   4. docs/STATUS.md — wersja rdzenia
+#
+# NIE dodaje wpisu w Builds: (potrzebny pełny hash taga — zrób to po tagnięciu).
 # SPDX-License-Identifier: GPL-3.0-or-later
 set -euo pipefail
 
-NEW="${1:?Użycie: $0 <MAJOR.MINOR.PATCH>}"
+NEW="${1:?Użycie: $0 <MAJOR.MINOR.PATCH> [versionCode]}"
 cd "$(dirname "$0")/.."
 
 if ! [[ "$NEW" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -12,34 +23,43 @@ if ! [[ "$NEW" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     exit 2
 fi
 
-MAJOR=$(echo "$NEW" | cut -d. -f1)
-MINOR=$(echo "$NEW" | cut -d. -f2)
-PATCH=$(echo "$NEW" | cut -d. -f3)
+META=metadata/pl.bklasahero.yml
+OLDCODE=$(sed -nE 's|^CurrentVersionCode:[[:space:]]*([0-9]+).*|\1|p' "$META" 2>/dev/null | head -1)
+NEWCODE="${2:-$(( ${OLDCODE:-0} + 1 ))}"
 
-# 1. core/CMakeLists.txt
-sed -i \
-    -e "s|set(BKH_VERSION_MAJOR [0-9]\\+)|set(BKH_VERSION_MAJOR $MAJOR)|" \
-    -e "s|set(BKH_VERSION_MINOR [0-9]\\+)|set(BKH_VERSION_MINOR $MINOR)|" \
-    -e "s|set(BKH_VERSION_PATCH [0-9]\\+)|set(BKH_VERSION_PATCH $PATCH)|" \
-    core/CMakeLists.txt
+if ! [[ "$NEWCODE" =~ ^[0-9]+$ ]]; then
+    echo "BŁĄD: versionCode musi być liczbą całkowitą, dostałem '$2'" >&2
+    exit 2
+fi
+if [[ -n "$OLDCODE" ]] && (( NEWCODE <= OLDCODE )); then
+    echo "BŁĄD: versionCode musi rosnąć monotonicznie ($OLDCODE → $NEWCODE)" >&2
+    exit 2
+fi
 
-# 2. android/app/build.gradle.kts (defaultConfig)
-sed -i \
-    -e "s|versionName = \".*\"$|versionName = \"$NEW\"|" \
+# 1. CMakeLists.txt (korzeń) — VERSION x.y.z w project(bkh ...)
+sed -i -E "s|VERSION [0-9]+\.[0-9]+\.[0-9]+|VERSION $NEW|" CMakeLists.txt
+
+# 2. android/app/build.gradle.kts — domyślne versionName / versionCode
+sed -i -E \
+    -e "s|(\?): \"[0-9]+\.[0-9]+\.[0-9]+\"|\1: \"$NEW\"|" \
+    -e "s|(\?): [0-9]+$|\1: $NEWCODE|" \
     android/app/build.gradle.kts
 
-# 3. metadata/pl.bklasahero.yml (F-Droid) — bump wersja
-if [[ -f metadata/pl.bklasahero.yml ]]; then
-    sed -i -E "s|^Version: .*|Version: $NEW|" metadata/pl.bklasahero.yml
+# 3. metadata/pl.bklasahero.yml — CurrentVersion / CurrentVersionCode
+if [[ -f "$META" ]]; then
+    sed -i -E \
+        -e "s|^CurrentVersion: .*|CurrentVersion: $NEW|" \
+        -e "s|^CurrentVersionCode: .*|CurrentVersionCode: $NEWCODE|" \
+        "$META"
 fi
 
-# 4. docs/STATUS.md — aktualizacja tabelki
+# 4. docs/STATUS.md — wersja rdzenia
 if [[ -f docs/STATUS.md ]]; then
-    sed -i -E "s|\| core |[0-9]+\\.[0-9]+\\.[0-9]+ \\|| core |$NEW \\||" docs/STATUS.md || true
+    sed -i -E "s|- Rdzeń: \*\*[0-9]+\.[0-9]+\.[0-9]+\*\*|- Rdzeń: **$NEW**|" docs/STATUS.md || true
 fi
 
-echo ">>> zaktualizowano wersję do $NEW"
+echo ">>> zaktualizowano wersję do $NEW (versionCode $OLDCODE → $NEWCODE)"
 echo "Pamiętaj o:"
-echo "  - zwiększeniu versionCode (przyrostowo) w android/app/build.gradle.kts"
-echo "  - wpisaniu zmian w CHANGELOG"
-echo "  - tagnięciu: git tag v$NEW"
+echo "  - wpisie zmian w docs/CHANGELOG.md"
+echo "  - tagnięciu i dodaniu wpisu w Builds: w $META (commit = pełny hash taga):"
+echo "      git tag v$NEW && git rev-parse v$NEW"

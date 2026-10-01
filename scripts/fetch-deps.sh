@@ -20,9 +20,12 @@ mkdir -p "$DEST"
 cd "$DEST"
 
 # --- GoogleTest 1.18.0 ----------------------------------------------
+# Archiwum GitHub rozpakowuje się do `googletest-<ver>`; BkhDependencies.cmake
+# oczekuje kanonicznej nazwy `googletest/`, więc robimy mv.
 GTEST_VERSION="1.18.0"
 GTEST_SHA256="6e3191c1455468b3fc35a417fb565c1c5071aee1b7e7f85e30cf48a98d37d8b5"
-GTEST_DIR="googletest-${GTEST_VERSION}"
+GTEST_SRC="googletest-${GTEST_VERSION}"
+GTEST_DIR="googletest"
 if [[ ! -d "$GTEST_DIR" ]]; then
     echo ">>> pobieram GoogleTest ${GTEST_VERSION}"
     TARBALL="v${GTEST_VERSION}.tar.gz"
@@ -31,12 +34,15 @@ if [[ ! -d "$GTEST_DIR" ]]; then
     echo "${GTEST_SHA256}  ${TARBALL}" | sha256sum -c -
     tar -xzf "$TARBALL"
     rm "$TARBALL"
+    mv "$GTEST_SRC" "$GTEST_DIR"
 fi
 
 # --- nlohmann/json 3.12.0 ----------------------------------------------
+# Jak wyżej: kanoniczna nazwa `json/` (BkhDependencies.cmake).
 JSON_VERSION="3.12.0"
 JSON_SHA256="4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187"
-JSON_DIR="json-${JSON_VERSION}"
+JSON_SRC="json-${JSON_VERSION}"
+JSON_DIR="json"
 if [[ ! -d "$JSON_DIR" ]]; then
     echo ">>> pobieram nlohmann/json ${JSON_VERSION}"
     TARBALL="v${JSON_VERSION}.tar.gz"
@@ -45,6 +51,7 @@ if [[ ! -d "$JSON_DIR" ]]; then
     echo "${JSON_SHA256}  ${TARBALL}" | sha256sum -c -
     tar -xzf "$TARBALL"
     rm "$TARBALL"
+    mv "$JSON_SRC" "$JSON_DIR"
 fi
 
 echo ">>> GOTOWE: $DEST"
