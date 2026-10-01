@@ -14,6 +14,13 @@
     <string name="home_new_career">Nowa kariera</string>
     <string name="home_continue_career">Kontynuuj karierę</string>
 
+    <string name="tutorial_title">Witaj w B-Klasa Hero!</string>
+    <string name="tutorial_subtitle">Tak wyglądają rzuty karne:</string>
+    <string name="tutorial_step_shoot">Kliknij bramkę, aby celować i strzelać</string>
+    <string name="tutorial_step_aim">Mierz w rogi — trudniej je obronić</string>
+    <string name="tutorial_step_match">Wygrywaj mecze i pnij się w tabeli ligi</string>
+    <string name="tutorial_start">Zacznij grać</string>
+
     <string name="new_career_title">Rozpocznij nową karierę</string>
     <string name="new_career_nickname">Pseudonim</string>
     <string name="new_career_search_city">Wyszukaj swoje miasto</string>

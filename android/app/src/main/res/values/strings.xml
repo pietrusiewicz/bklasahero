@@ -15,6 +15,13 @@
     <string name="home_new_career">New career</string>
     <string name="home_continue_career">Continue career</string>
 
+    <string name="tutorial_title">Welcome to B-Klasa Hero!</string>
+    <string name="tutorial_subtitle">Here\'s how a penalty shootout works:</string>
+    <string name="tutorial_step_shoot">Tap the goal to aim and shoot</string>
+    <string name="tutorial_step_aim">Aim for the corners — they\'re harder to save</string>
+    <string name="tutorial_step_match">Win matches and climb the league table</string>
+    <string name="tutorial_start">Start playing</string>
+
     <string name="new_career_title">Start a new career</string>
     <string name="new_career_nickname">Nickname</string>
     <string name="new_career_search_city">Search your city</string>

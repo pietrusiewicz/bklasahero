@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -51,13 +52,17 @@ private val BallWhite = Color(0xFFFBFBFB)
 private val BallShade = Color(0xFFB9BEC4)
 
 // --- stałe perspektywy (w ułamkach ekranu) ---
-private const val HORIZON = 0.52f        // linia horyzontu / dolna krawędź bramki
-private const val GOAL_TOP = 0.30f       // górna krawędź bramki (poprzeczka)
-private const val GOAL_LEFT = 0.19f      // lewy słupek (ułamek szerokości)
-private const val GOAL_RIGHT = 0.81f     // prawy słupek
-private const val FRONT_Y = 0.80f        // punkt karny (z=0) na ekranie
-private const val SHOOTER_Y = 0.90f      // strzelec (bliżej kamery)
-private const val Z_MAX = 11f            // głębokość: 0 = punkt karny, 11 = linia bramkowa
+private const val HORIZON_Y = 0.26f     // horyzont / punkt zbiegu (wysokość oczu)
+private const val GOAL_TOP = 0.30f      // górna krawędź bramki (poprzeczka)
+private const val GOAL_LINE_Y = 0.52f   // linia bramkowa (dół bramki, cel piłki)
+private const val GOAL_LEFT = 0.19f     // lewy słupek (ułamek szerokości)
+private const val GOAL_RIGHT = 0.81f    // prawy słupek
+private const val FRONT_Y = 0.80f       // punkt karny (z=0) na ekranie
+private const val SHOOTER_Y = 0.90f     // strzelec (bliżej kamery)
+private const val Z_MAX = 11f           // głębokość: 0 = punkt karny, 11 = linia bramkowa
+
+// Skala figur — większe postacie na ekranie.
+private fun figureScale(h: Float): Float = (h / 1150f).coerceIn(0.9f, 2.6f)
 
 @Composable
 fun MatchRenderer(@Suppress("UNUSED_PARAMETER") state: pl.bklasahero.ui.AppUiState) {
@@ -97,7 +102,7 @@ fun MatchRenderer(@Suppress("UNUSED_PARAMETER") state: pl.bklasahero.ui.AppUiSta
 // ---------------------------------------------------------------------------
 private fun DrawScope.drawSkyAndStands() {
     val h = size.height
-    val horizon = h * HORIZON
+    val horizon = h * HORIZON_Y
     // niebo — gradient wieczorny
     drawRect(
         brush = Brush.verticalGradient(
@@ -137,7 +142,7 @@ private fun DrawScope.drawSkyAndStands() {
 private fun DrawScope.drawGrass() {
     val w = size.width
     val h = size.height
-    val horizon = h * HORIZON
+    val horizon = h * HORIZON_Y
     // pionowy gradient (jaśniej bliżej kamery)
     drawRect(
         brush = Brush.verticalGradient(
@@ -153,7 +158,6 @@ private fun DrawScope.drawGrass() {
     for (i in 0 until bands) {
         val f0 = i.toFloat() / bands
         val f1 = (i + 0.5f) / bands
-        // perspektywiczne rozłożenie pasów
         val y0 = horizon + (h - horizon) * (f0 * f0)
         val y1 = horizon + (h - horizon) * (f1 * f1)
         if (i % 2 == 0) {
@@ -167,58 +171,60 @@ private fun DrawScope.drawGrass() {
 }
 
 // ---------------------------------------------------------------------------
-// Linie boiska (pole karne, pole bramkowe, punkt karny)
+// Linie boiska — spójna perspektywa z jednym punktem zbiegu (horyzont).
+// Wszystkie krawędzie pól karne zbiegają się do (cx, HORIZON_Y).
 // ---------------------------------------------------------------------------
 private fun DrawScope.drawFieldLines() {
     val w = size.width
     val h = size.height
-    val horizon = h * HORIZON
-    val bottom = h * 0.985f
     val cx = w / 2f
-    val lineW = 3f        // zwykłe linie
-    val boxW = 4.5f       // grubsza linia pól karnych
+    val goalLineY = h * GOAL_LINE_Y
+    val vpY = h * HORIZON_Y
+    val lineW = 3.5f      // zwykłe linie
+    val boxW = 5f         // grubsza linia pól karnych
 
-    // Linie boczne (autowe) — zbiegają do punktu zbiegu na środku horyzontu.
-    drawLine(LineWhite, Offset(0f, horizon), Offset(cx, bottom), strokeWidth = lineW)
-    drawLine(LineWhite, Offset(w, horizon), Offset(cx, bottom), strokeWidth = lineW)
+    // Linia bramkowa — na całej szerokości (piłka i bramka są na tej linii).
+    drawLine(LineWhite, Offset(0f, goalLineY), Offset(w, goalLineY), strokeWidth = lineW)
 
-    // --- Pole karne (16,5 m) — trapez, tylna krawędź na linii bramkowej ---
-    val boxBackHalf = w * 0.42f    // tył przy horyzoncie (szerzej niż bramka)
-    val boxFrontHalf = w * 0.48f   // przód bliżej kamery (szerszy)
-    val boxFrontY = h * 0.86f
-    val box = Path().apply {
-        moveTo(cx - boxBackHalf, horizon)
-        lineTo(cx + boxBackHalf, horizon)
-        lineTo(cx + boxFrontHalf, boxFrontY)
-        lineTo(cx - boxFrontHalf, boxFrontY)
-        close()
-    }
-    drawPath(box, color = LineWhite, style = Stroke(width = boxW))
-
-    // --- Pole bramkowe (5,5 m) — mniejszy trapez wewnątrz pola karnego ---
-    val sixBackHalf = w * 0.34f
-    val sixFrontHalf = w * 0.38f
-    val sixFrontY = h * 0.63f
+    // Pole bramkowe (5,5 m) — mniejszy trapez zbiegający do punktu zbiegu.
+    val sixBackHalf = w * 0.40f
+    val sixFrontY = h * 0.60f
+    val sixFrontHalf = sixBackHalf * (sixFrontY - vpY) / (goalLineY - vpY)
     val six = Path().apply {
-        moveTo(cx - sixBackHalf, horizon)
-        lineTo(cx + sixBackHalf, horizon)
+        moveTo(cx - sixBackHalf, goalLineY)
+        lineTo(cx + sixBackHalf, goalLineY)
         lineTo(cx + sixFrontHalf, sixFrontY)
         lineTo(cx - sixFrontHalf, sixFrontY)
         close()
     }
     drawPath(six, color = LineWhite, style = Stroke(width = boxW))
 
-    // Punkt karny
-    drawCircle(color = LineWhite, radius = 5.5f, center = Offset(cx, h * FRONT_Y))
+    // Pole karne (16,5 m) — większy trapez, przód wychodzi poza ekran (tak ma być).
+    val boxBackHalf = w * 0.46f
+    val boxFrontY = h * 0.72f
+    val boxFrontHalf = boxBackHalf * (boxFrontY - vpY) / (goalLineY - vpY)
+    val box = Path().apply {
+        moveTo(cx - boxBackHalf, goalLineY)
+        lineTo(cx + boxBackHalf, goalLineY)
+        lineTo(cx + boxFrontHalf, boxFrontY)
+        lineTo(cx - boxFrontHalf, boxFrontY)
+        close()
+    }
+    drawPath(box, color = LineWhite, style = Stroke(width = boxW))
 
-    // Łuk pola karnego — wygięty od bramki (nad punktem karnym)
+    // Punkt karny
+    drawCircle(color = LineWhite, radius = 6f, center = Offset(cx, h * FRONT_Y))
+
+    // Łuk pola karnego („D") — wygięty w stronę kamery, pod punktem karnym.
+    val arcHalfW = w * 0.10f
+    val arcHalfH = h * 0.06f
     drawArc(
         color = LineWhite,
         startAngle = 0f,
         sweepAngle = 180f,
         useCenter = false,
-        topLeft = Offset(cx - w * 0.09f, h * FRONT_Y - w * 0.09f),
-        size = Size(w * 0.18f, w * 0.18f),
+        topLeft = Offset(cx - arcHalfW, h * FRONT_Y - arcHalfH),
+        size = Size(arcHalfW * 2f, arcHalfH * 2f),
         style = Stroke(width = lineW),
     )
 }
@@ -230,7 +236,7 @@ private fun DrawScope.drawGoal() {
     val w = size.width
     val h = size.height
     val top = h * GOAL_TOP
-    val bottom = h * HORIZON
+    val bottom = h * GOAL_LINE_Y
     val left = w * GOAL_LEFT
     val right = w * GOAL_RIGHT
     val gw = right - left
@@ -272,12 +278,12 @@ private fun DrawScope.worldToScreen(xM: Float, yM: Float, zM: Float): Offset {
     val w = size.width
     val h = size.height
     val goalHalfW = w * (GOAL_RIGHT - GOAL_LEFT) / 2f
-    val goalH = h * (HORIZON - GOAL_TOP)
+    val goalH = h * (GOAL_LINE_Y - GOAL_TOP)
     val scaleX = goalHalfW / 3.66f
     val scaleY = goalH / 2.44f
     val depth = (zM / Z_MAX).coerceIn(0f, 1f)
     val px = w / 2f + xM * scaleX
-    val py = h * FRONT_Y + (h * HORIZON - h * FRONT_Y) * depth - yM * scaleY
+    val py = h * FRONT_Y + (h * GOAL_LINE_Y - h * FRONT_Y) * depth - yM * scaleY
     return Offset(px, py)
 }
 
@@ -345,36 +351,34 @@ private fun DrawScope.drawTrajectory(t: Float) {
 }
 
 // ---------------------------------------------------------------------------
-// Bramkarz (nurkujący)
+// Bramkarz (nurkujący) — większa sylwetka
 // ---------------------------------------------------------------------------
 private fun DrawScope.drawKeeper(t: Float) {
     val w = size.width
     val h = size.height
     val floats = FrameBuffer.floats
-    var center = Offset(w / 2f, h * HORIZON)
+    var center = Offset(w / 2f, h * GOAL_LINE_Y)
     var dive = 0f
     if (FrameBuffer.keeperSamples > 0) {
         val timeS = t * FrameBuffer.durationS
         val (kx, ky, kz) = keeperPoint(floats, timeS)
         center = worldToScreen(kx, ky, kz)
-        // diveProgress z ostatniej próbki bramkarza w tym czasie
         val start = FrameBuffer.HEADER_FLOATS + FrameBuffer.ballSamples * FrameBuffer.BALL_FLOATS_PER_SAMPLE
         dive = interpolateSample(floats, start, FrameBuffer.keeperSamples, FrameBuffer.KEEPER_FLOATS_PER_SAMPLE, timeS, 4)
     }
-    val scale = (h / 1920f).coerceIn(0.6f, 1.6f)
-    val r = 15f * scale
+    val scale = figureScale(h)
+    val r = 22f * scale
 
-    // tułów + ręce + nogi — prosta sylwetka z rotacją przy nurkowaniu
     rotate(degrees = dive * 40f, pivot = center) {
         // ręce (z rękawicami) — rozłożone przy nurkowaniu
-        val armSpread = 26f * scale * (1f + dive)
-        drawLine(KeeperJersey, center, Offset(center.x - armSpread, center.y - 8f * scale), strokeWidth = 7f * scale, cap = StrokeCap.Round)
-        drawLine(KeeperJersey, center, Offset(center.x + armSpread, center.y - 8f * scale), strokeWidth = 7f * scale, cap = StrokeCap.Round)
-        drawCircle(KeeperGlove, radius = 6f * scale, center = Offset(center.x - armSpread, center.y - 8f * scale))
-        drawCircle(KeeperGlove, radius = 6f * scale, center = Offset(center.x + armSpread, center.y - 8f * scale))
+        val armSpread = 40f * scale * (1f + dive)
+        drawLine(KeeperJersey, center, Offset(center.x - armSpread, center.y - 12f * scale), strokeWidth = 10f * scale, cap = StrokeCap.Round)
+        drawLine(KeeperJersey, center, Offset(center.x + armSpread, center.y - 12f * scale), strokeWidth = 10f * scale, cap = StrokeCap.Round)
+        drawCircle(KeeperGlove, radius = 9f * scale, center = Offset(center.x - armSpread, center.y - 12f * scale))
+        drawCircle(KeeperGlove, radius = 9f * scale, center = Offset(center.x + armSpread, center.y - 12f * scale))
         // nogi
-        drawLine(Boot, center, Offset(center.x - 10f * scale, center.y + 22f * scale), strokeWidth = 8f * scale, cap = StrokeCap.Round)
-        drawLine(Boot, center, Offset(center.x + 10f * scale, center.y + 22f * scale), strokeWidth = 8f * scale, cap = StrokeCap.Round)
+        drawLine(Boot, center, Offset(center.x - 14f * scale, center.y + 34f * scale), strokeWidth = 11f * scale, cap = StrokeCap.Round)
+        drawLine(Boot, center, Offset(center.x + 14f * scale, center.y + 34f * scale), strokeWidth = 11f * scale, cap = StrokeCap.Round)
         // tułów
         drawCircle(KeeperJersey, radius = r, center = center)
         // głowa
@@ -383,30 +387,30 @@ private fun DrawScope.drawKeeper(t: Float) {
 }
 
 // ---------------------------------------------------------------------------
-// Strzelec (widok od tyłu)
+// Strzelec (widok od tyłu) — większa sylwetka
 // ---------------------------------------------------------------------------
 private fun DrawScope.drawShooter(@Suppress("UNUSED_PARAMETER") t: Float) {
     val w = size.width
     val h = size.height
-    val scale = (h / 1920f).coerceIn(0.6f, 1.6f)
+    val scale = figureScale(h)
     val cx = w / 2f
     val baseY = h * SHOOTER_Y
 
     // nogi (łydki + buty)
-    drawLine(ShooterSock, Offset(cx - 16f * scale, baseY - 30f * scale), Offset(cx - 18f * scale, baseY), strokeWidth = 9f * scale, cap = StrokeCap.Round)
-    drawLine(ShooterSock, Offset(cx + 16f * scale, baseY - 30f * scale), Offset(cx + 18f * scale, baseY), strokeWidth = 9f * scale, cap = StrokeCap.Round)
-    drawCircle(Boot, radius = 8f * scale, center = Offset(cx - 20f * scale, baseY))
-    drawCircle(Boot, radius = 8f * scale, center = Offset(cx + 20f * scale, baseY))
+    drawLine(ShooterSock, Offset(cx - 20f * scale, baseY - 44f * scale), Offset(cx - 24f * scale, baseY), strokeWidth = 13f * scale, cap = StrokeCap.Round)
+    drawLine(ShooterSock, Offset(cx + 20f * scale, baseY - 44f * scale), Offset(cx + 24f * scale, baseY), strokeWidth = 13f * scale, cap = StrokeCap.Round)
+    drawCircle(Boot, radius = 11f * scale, center = Offset(cx - 26f * scale, baseY))
+    drawCircle(Boot, radius = 11f * scale, center = Offset(cx + 26f * scale, baseY))
     // spodenki
-    drawRoundRectShooter(ShooterShorts, cx - 20f * scale, baseY - 52f * scale, 40f * scale, 26f * scale)
+    drawRoundRectShooter(ShooterShorts, cx - 26f * scale, baseY - 76f * scale, 52f * scale, 34f * scale)
     // tułów (koszulka z numerem)
-    drawRoundRectShooter(ShooterJersey, cx - 22f * scale, baseY - 96f * scale, 44f * scale, 48f * scale)
-    drawCircle(color = Color.White, radius = 10f * scale, center = Offset(cx, baseY - 72f * scale))
+    drawRoundRectShooter(ShooterJersey, cx - 30f * scale, baseY - 138f * scale, 60f * scale, 66f * scale)
+    drawCircle(color = Color.White, radius = 14f * scale, center = Offset(cx, baseY - 105f * scale))
     // ręce (wzdłuż tułowia)
-    drawLine(ShooterJersey, Offset(cx - 24f * scale, baseY - 84f * scale), Offset(cx - 30f * scale, baseY - 56f * scale), strokeWidth = 7f * scale, cap = StrokeCap.Round)
-    drawLine(ShooterJersey, Offset(cx + 24f * scale, baseY - 84f * scale), Offset(cx + 30f * scale, baseY - 56f * scale), strokeWidth = 7f * scale, cap = StrokeCap.Round)
+    drawLine(ShooterJersey, Offset(cx - 32f * scale, baseY - 120f * scale), Offset(cx - 40f * scale, baseY - 80f * scale), strokeWidth = 10f * scale, cap = StrokeCap.Round)
+    drawLine(ShooterJersey, Offset(cx + 32f * scale, baseY - 120f * scale), Offset(cx + 40f * scale, baseY - 80f * scale), strokeWidth = 10f * scale, cap = StrokeCap.Round)
     // głowa
-    drawCircle(ShooterSkin, radius = 14f * scale, center = Offset(cx, baseY - 108f * scale))
+    drawCircle(ShooterSkin, radius = 20f * scale, center = Offset(cx, baseY - 156f * scale))
 }
 
 // rysuje zaokrąglony prostokąt (pomocnicza)
@@ -415,30 +419,32 @@ private fun DrawScope.drawRoundRectShooter(color: Color, left: Float, top: Float
         color = color,
         topLeft = Offset(left, top),
         size = Size(w, h),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f),
+        cornerRadius = CornerRadius(10f, 10f),
     )
 }
 
 // ---------------------------------------------------------------------------
-// Piłka (animowana po torze)
+// Piłka (animowana po torze) — większa, z cieniem pod nią
 // ---------------------------------------------------------------------------
 private fun DrawScope.drawBall(t: Float) {
     val w = size.width
     val h = size.height
     val floats = FrameBuffer.floats
     var center = Offset(w / 2f, h * FRONT_Y)
+    var groundY = h * FRONT_Y
     if (FrameBuffer.ballSamples > 0) {
         val timeS = t * FrameBuffer.durationS
         val (bx, by, bz) = ballPoint(floats, timeS)
         center = worldToScreen(bx, by, bz)
+        groundY = worldToScreen(bx, 0f, bz).y
     }
-    val scale = (h / 1920f).coerceIn(0.6f, 1.6f)
-    val r = 9f * scale
-    // cień piłki na murawie
+    val scale = figureScale(h)
+    val r = 14f * scale
+    // cień piłki na murawie (pod piłką)
     drawOval(
         color = Color.Black.copy(alpha = 0.18f),
-        topLeft = Offset(center.x - r * 0.8f, h * HORIZON + 4f * scale),
-        size = Size(r * 1.6f, r * 0.5f),
+        topLeft = Offset(center.x - r * 0.9f, groundY - r * 0.25f),
+        size = Size(r * 1.8f, r * 0.55f),
     )
     // piłka — gradient sferyczny + paski
     drawCircle(

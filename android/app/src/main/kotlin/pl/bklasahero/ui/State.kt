@@ -8,7 +8,7 @@ import kotlinx.serialization.json.JsonObject
 import pl.bklasahero.data.AppContainer
 
 /** Wszystkie ekrany. */
-enum class AppScreen { Loading, Home, NewCareer, Career, Match, Shootout, Defend, Result, Table, Fixtures }
+enum class AppScreen { Loading, Tutorial, Home, NewCareer, Career, Match, Shootout, Defend, Result, Table, Fixtures }
 
 data class AppUiState(
     val screen: AppScreen = AppScreen.Loading,
@@ -34,6 +34,7 @@ sealed interface AppIntent {
     data class SetCareer(val json: JsonObject) : AppIntent
     data object SaveCareer : AppIntent
     data object ToggleTheme : AppIntent
+    data object FinishTutorial : AppIntent
 }
 
 /**
@@ -51,4 +52,8 @@ fun reduce(state: AppUiState, intent: AppIntent, container: AppContainer): AppUi
             state.copy(toast = "saved")
         }
         AppIntent.ToggleTheme -> state.copy(darkTheme = !state.darkTheme)
+        AppIntent.FinishTutorial -> {
+            container.markTutorialSeen()
+            state.copy(screen = AppScreen.Home)
+        }
     }

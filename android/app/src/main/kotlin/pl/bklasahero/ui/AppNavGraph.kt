@@ -15,12 +15,14 @@ import pl.bklasahero.ui.screens.NewCareerScreen
 import pl.bklasahero.ui.screens.ResultScreen
 import pl.bklasahero.ui.screens.ShootoutScreen
 import pl.bklasahero.ui.screens.TableScreen
+import pl.bklasahero.ui.screens.TutorialScreen
 
 @Composable
 fun AppNavGraph(state: AppUiState, viewModel: AppViewModel) {
     val dispatch = viewModel::dispatch
     when (state.screen) {
         AppScreen.Loading -> LoadingScreen(state, dispatch)
+        AppScreen.Tutorial -> TutorialScreen(state, dispatch)
         AppScreen.Home -> HomeScreen(state, dispatch)
         AppScreen.NewCareer -> NewCareerScreen(state, viewModel)
         AppScreen.Career -> CareerScreen(state, viewModel)

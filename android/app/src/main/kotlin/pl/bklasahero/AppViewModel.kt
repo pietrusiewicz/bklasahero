@@ -52,7 +52,8 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
             }
             _uiState.update {
                 it.copy(
-                    screen = AppScreen.Home,
+                    // Pierwsze uruchomienie → samouczek; kolejne → prosto do menu.
+                    screen = if (container.isTutorialSeen()) AppScreen.Home else AppScreen.Tutorial,
                     careerReady = restored,
                 )
             }
