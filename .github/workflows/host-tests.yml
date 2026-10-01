@@ -39,7 +39,7 @@ jobs:
             grep -E "warning:" | grep -v "^In file" | grep -v "^$" | \
             ( ! grep . ) || (echo "WARNINGS:" && grep . | head -20 && exit 1)
 
-      - name: Artefakt: raport testów
+      - name: "Artefakt: raport testów"
         if: always()
         uses: actions/upload-artifact@v4
         with:
