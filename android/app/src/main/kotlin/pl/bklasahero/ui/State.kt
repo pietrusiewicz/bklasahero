@@ -35,6 +35,9 @@ data class Scoreboard(
     val awayTaken: Int = 0,
     val kicksPerSide: Int = 5,
     val finished: Boolean = false,
+    /** Wynik kolejnych rzutów drużyny: true = gol (zielona kropka), false = pudło (czerwona). */
+    val homeKicks: List<Boolean> = emptyList(),
+    val awayKicks: List<Boolean> = emptyList(),
 )
 
 data class PendingKick(

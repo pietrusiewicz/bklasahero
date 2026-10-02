@@ -15,6 +15,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -194,12 +195,27 @@ private fun nestedJson(data: JsonObject, key: String): JsonObject? {
     }
 }
 
-private fun scoreboardFrom(sb: Scoreboard, so: JsonObject?): Scoreboard = sb.copy(
-    homeScore = so?.get("homeScore")?.jsonPrimitive?.intOrNull ?: sb.homeScore,
-    awayScore = so?.get("awayScore")?.jsonPrimitive?.intOrNull ?: sb.awayScore,
-    homeTaken = so?.get("homeTaken")?.jsonPrimitive?.intOrNull ?: sb.homeTaken,
-    awayTaken = so?.get("awayTaken")?.jsonPrimitive?.intOrNull ?: sb.awayTaken,
-)
+private fun scoreboardFrom(sb: Scoreboard, so: JsonObject?): Scoreboard {
+    // Wyniki kolejnych rzutów (kropki pod nazwami drużyn).
+    val homeKicks = mutableListOf<Boolean>()
+    val awayKicks = mutableListOf<Boolean>()
+    so?.get("kicks")?.jsonArray?.forEach { el ->
+        val o = el as? JsonObject ?: return@forEach
+        val scored = o["scored"]?.jsonPrimitive?.booleanOrNull ?: false
+        when (o["side"]?.jsonPrimitive?.content) {
+            "side.home" -> homeKicks.add(scored)
+            "side.away" -> awayKicks.add(scored)
+        }
+    }
+    return sb.copy(
+        homeScore = so?.get("homeScore")?.jsonPrimitive?.intOrNull ?: sb.homeScore,
+        awayScore = so?.get("awayScore")?.jsonPrimitive?.intOrNull ?: sb.awayScore,
+        homeTaken = so?.get("homeTaken")?.jsonPrimitive?.intOrNull ?: sb.homeTaken,
+        awayTaken = so?.get("awayTaken")?.jsonPrimitive?.intOrNull ?: sb.awayTaken,
+        homeKicks = homeKicks,
+        awayKicks = awayKicks,
+    )
+}
 
 private fun AppUiState.applyMatchSetup(data: JsonObject): AppUiState {
     val setup = data["setup"]?.jsonObject
