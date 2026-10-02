@@ -1,6 +1,6 @@
 // Samouczek na wejściu — pokazywany raz, po pierwszym uruchomieniu.
 // Trzy kroki: jak się gra → jak się strzela → jak się broni.
-// Obrazki pokazują sylwetki zawodników (strzelec od tyłu, nurkujący bramkarz).
+// Obrazki pokazują sylwetki zawodników (wspólny moduł z meczem).
 // Po ostatnim kroku gracz przechodzi do wyboru swojego miasta.
 // SPDX-License-Identifier: GPL-3.0-or-later
 package pl.bklasahero.ui.screens
@@ -37,7 +37,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -45,18 +44,23 @@ import androidx.compose.ui.unit.dp
 import pl.bklasahero.R
 import pl.bklasahero.ui.AppIntent
 import pl.bklasahero.ui.AppUiState
+import pl.bklasahero.ui.render.KitColors
+import pl.bklasahero.ui.render.drawGoalkeeper
+import pl.bklasahero.ui.render.drawPlayerBackView
 
 private const val PAGES = 3
 
-// Paleta zgodna z rendererem meczu.
-private val ArtJersey = Color(0xFFD9342B)
-private val ArtShorts = Color(0xFF20242A)
-private val ArtSock = Color(0xFFD9342B)
-private val ArtBoot = Color(0xFF16181C)
-private val ArtSkin = Color(0xFFE8B48C)
-private val ArtKeeper = Color(0xFFF4B400)
-private val ArtGlove = Color(0xFF3A3F45)
 private val ArtGrass = Color(0xFF2F8B3B)
+private val ShooterKit = KitColors(
+    jersey = Color(0xFFD9342B),
+    shorts = Color(0xFF20242A),
+    socks = Color(0xFFD9342B),
+)
+private val KeeperKit = KitColors(
+    jersey = Color(0xFFF4B400),
+    shorts = Color(0xFF20242A),
+    socks = Color(0xFF20242A),
+)
 
 @Composable
 fun TutorialScreen(state: AppUiState, dispatch: (AppIntent) -> Unit) {
@@ -149,20 +153,20 @@ private fun TutorialArt(page: Int) {
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp),
+            .height(210.dp),
     ) {
         val w = size.width
         val h = size.height
 
-        // Murawa + pasy koszenia
+        // Murawa + pas koszenia
         drawRect(color = ArtGrass, size = Size(w, h))
         drawRect(color = Color(0x22000000), topLeft = Offset(0f, h * 0.62f), size = Size(w, h * 0.38f))
 
         // Bramka
-        val gl = w * 0.10f
-        val gr = w * 0.90f
-        val gt = h * 0.08f
-        val gb = h * 0.52f
+        val gl = w * 0.09f
+        val gr = w * 0.91f
+        val gt = h * 0.06f
+        val gb = h * 0.50f
         drawRect(color = Color(0x1AFFFFFF), topLeft = Offset(gl, gt), size = Size(gr - gl, gb - gt))
         for (i in 1..8) {
             val x = gl + (gr - gl) * i / 9f
@@ -175,19 +179,23 @@ private fun TutorialArt(page: Int) {
         drawLine(Color.White, Offset(gl, gt), Offset(gl, gb), strokeWidth = 5f)
         drawLine(Color.White, Offset(gr, gt), Offset(gr, gb), strokeWidth = 5f)
         drawLine(Color.White, Offset(gl, gt), Offset(gr, gt), strokeWidth = 5f)
-        // linia bramkowa + punkt karny
         drawLine(Color(0x99FFFFFF), Offset(0f, gb), Offset(w, gb), strokeWidth = 2f)
 
         when (page) {
             0 -> {
-                // Jak się gra: strzelec od tyłu + piłka na punkcie karnym
-                drawCircle(Color.White, radius = h * 0.05f, center = Offset(w * 0.5f, h * 0.66f))
-                drawShooterFigure(cx = w * 0.5f, feetY = h * 0.99f, s = h * 0.115f)
+                // Jak się gra: piłka na punkcie karnym i strzelec od tyłu
+                drawCircle(Color.White, radius = h * 0.045f, center = Offset(w * 0.5f, h * 0.64f))
+                drawPlayerBackView(
+                    centerX = w * 0.5f,
+                    feetY = h * 1.00f,
+                    height = h * 0.52f,
+                    kit = ShooterKit,
+                )
             }
             1 -> {
-                // Jak się strzela: celownik, tor lotu, pasek mocy
-                val ball = Offset(w * 0.5f, h * 0.64f)
-                val aim = Offset(w * 0.28f, h * 0.28f)
+                // Jak się strzela: celownik, tor lotu, moc
+                val ball = Offset(w * 0.5f, h * 0.62f)
+                val aim = Offset(w * 0.29f, h * 0.26f)
                 drawLine(
                     color = Color(0x99FFFFFF),
                     start = ball,
@@ -195,7 +203,7 @@ private fun TutorialArt(page: Int) {
                     strokeWidth = 3f,
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 14f)),
                 )
-                val r = h * 0.12f
+                val r = h * 0.11f
                 drawCircle(Color.White, radius = r, center = aim, style = Stroke(width = 3f))
                 drawCircle(Color.White, radius = 3f, center = aim)
                 drawLine(Color.White, Offset(aim.x - r - 14f, aim.y), Offset(aim.x - r + 2f, aim.y), strokeWidth = 3f)
@@ -203,76 +211,51 @@ private fun TutorialArt(page: Int) {
                 drawLine(Color.White, Offset(aim.x, aim.y - r - 14f), Offset(aim.x, aim.y - r + 2f), strokeWidth = 3f)
                 drawLine(Color.White, Offset(aim.x, aim.y + r - 2f), Offset(aim.x, aim.y + r + 14f), strokeWidth = 3f)
 
-                drawCircle(Color.White, radius = h * 0.045f, center = ball)
-                drawShooterFigure(cx = w * 0.5f, feetY = h * 0.90f, s = h * 0.105f)
+                drawCircle(Color.White, radius = h * 0.042f, center = ball)
+                drawPlayerBackView(
+                    centerX = w * 0.5f,
+                    feetY = h * 0.93f,
+                    height = h * 0.48f,
+                    kit = ShooterKit,
+                )
 
-                // Pasek mocy
+                // pasek mocy
                 drawRoundRect(
                     color = Color(0x66000000),
-                    topLeft = Offset(w * 0.22f, h * 0.93f),
-                    size = Size(w * 0.56f, h * 0.06f),
+                    topLeft = Offset(w * 0.20f, h * 0.95f),
+                    size = Size(w * 0.60f, h * 0.05f),
                     cornerRadius = CornerRadius(8f, 8f),
                 )
                 drawRoundRect(
                     color = Color(0xFFFFC93C),
-                    topLeft = Offset(w * 0.22f, h * 0.93f),
-                    size = Size(w * 0.56f * 0.65f, h * 0.06f),
+                    topLeft = Offset(w * 0.20f, h * 0.95f),
+                    size = Size(w * 0.60f * 0.65f, h * 0.05f),
                     cornerRadius = CornerRadius(8f, 8f),
                 )
             }
             else -> {
-                // Jak się broni: strzelec przeciwnika, nurkujący bramkarz, piłka w rogu
-                drawCircle(Color.White, radius = h * 0.05f, center = Offset(w * 0.72f, h * 0.68f))
-                drawShooterFigure(cx = w * 0.62f, feetY = h * 0.99f, s = h * 0.11f)
-                drawKeeperFigure(cx = w * 0.42f, cy = h * 0.36f, s = h * 0.10f, dir = -1f)
+                // Jak się broni: strzelec przeciwnika, nurkujący bramkarz, gest
+                drawCircle(Color.White, radius = h * 0.045f, center = Offset(w * 0.74f, h * 0.66f))
+                drawPlayerBackView(
+                    centerX = w * 0.64f,
+                    feetY = h * 1.00f,
+                    height = h * 0.50f,
+                    kit = ShooterKit,
+                )
+                drawGoalkeeper(
+                    feetX = w * 0.40f,
+                    feetY = h * 0.60f,
+                    height = h * 0.44f,
+                    kit = KeeperKit,
+                    dir = -1f,
+                    progress = 1f,
+                )
 
-                // Gest: strzałka w lewo (kierunek nurkowania)
-                val ay = h * 0.86f
-                drawLine(Color(0xCCFFFFFF), Offset(w * 0.68f, ay), Offset(w * 0.34f, ay), strokeWidth = 5f, cap = StrokeCap.Round)
-                drawLine(Color(0xCCFFFFFF), Offset(w * 0.34f, ay), Offset(w * 0.42f, ay - h * 0.05f), strokeWidth = 5f, cap = StrokeCap.Round)
-                drawLine(Color(0xCCFFFFFF), Offset(w * 0.34f, ay), Offset(w * 0.42f, ay + h * 0.05f), strokeWidth = 5f, cap = StrokeCap.Round)
+                val ay = h * 0.87f
+                drawLine(Color(0xCCFFFFFF), Offset(w * 0.70f, ay), Offset(w * 0.36f, ay), strokeWidth = 5f, cap = StrokeCap.Round)
+                drawLine(Color(0xCCFFFFFF), Offset(w * 0.36f, ay), Offset(w * 0.44f, ay - h * 0.05f), strokeWidth = 5f, cap = StrokeCap.Round)
+                drawLine(Color(0xCCFFFFFF), Offset(w * 0.36f, ay), Offset(w * 0.44f, ay + h * 0.05f), strokeWidth = 5f, cap = StrokeCap.Round)
             }
         }
     }
-}
-
-/** Sylwetka strzelca od tyłu (jak w meczu): nogi, spodenki, koszulka, ręce, głowa. */
-private fun DrawScope.drawShooterFigure(cx: Float, feetY: Float, s: Float) {
-    drawLine(ArtSock, Offset(cx - 0.30f * s, feetY - 0.85f * s), Offset(cx - 0.38f * s, feetY), strokeWidth = 0.24f * s, cap = StrokeCap.Round)
-    drawLine(ArtSock, Offset(cx + 0.30f * s, feetY - 0.85f * s), Offset(cx + 0.38f * s, feetY), strokeWidth = 0.24f * s, cap = StrokeCap.Round)
-    drawCircle(ArtBoot, 0.19f * s, Offset(cx - 0.42f * s, feetY))
-    drawCircle(ArtBoot, 0.19f * s, Offset(cx + 0.42f * s, feetY))
-    drawRoundRect(
-        color = ArtShorts,
-        topLeft = Offset(cx - 0.50f * s, feetY - 1.45f * s),
-        size = Size(1.00f * s, 0.62f * s),
-        cornerRadius = CornerRadius(0.18f * s, 0.18f * s),
-    )
-    drawRoundRect(
-        color = ArtJersey,
-        topLeft = Offset(cx - 0.55f * s, feetY - 2.60f * s),
-        size = Size(1.10f * s, 1.25f * s),
-        cornerRadius = CornerRadius(0.20f * s, 0.20f * s),
-    )
-    drawLine(ArtJersey, Offset(cx - 0.55f * s, feetY - 2.35f * s), Offset(cx - 0.78f * s, feetY - 1.50f * s), strokeWidth = 0.20f * s, cap = StrokeCap.Round)
-    drawLine(ArtJersey, Offset(cx + 0.55f * s, feetY - 2.35f * s), Offset(cx + 0.78f * s, feetY - 1.50f * s), strokeWidth = 0.20f * s, cap = StrokeCap.Round)
-    drawCircle(ArtSkin, 0.36f * s, Offset(cx, feetY - 3.00f * s))
-}
-
-/** Sylwetka bramkarza w nurkowaniu; `dir` = -1 w lewo, +1 w prawo. */
-private fun DrawScope.drawKeeperFigure(cx: Float, cy: Float, s: Float, dir: Float) {
-    val body = Offset(cx + dir * 0.9f * s, cy - 0.4f * s)
-    // nogi
-    drawLine(ArtBoot, body, Offset(cx - dir * 0.5f * s, cy + 0.9f * s), strokeWidth = 0.30f * s, cap = StrokeCap.Round)
-    drawLine(ArtBoot, body, Offset(cx - dir * 0.1f * s, cy + 1.0f * s), strokeWidth = 0.30f * s, cap = StrokeCap.Round)
-    // ręce do piłki
-    val hand1 = Offset(body.x + dir * 1.4f * s, body.y - 0.6f * s)
-    val hand2 = Offset(body.x + dir * 1.2f * s, body.y + 0.7f * s)
-    drawLine(ArtKeeper, body, hand1, strokeWidth = 0.26f * s, cap = StrokeCap.Round)
-    drawLine(ArtKeeper, body, hand2, strokeWidth = 0.26f * s, cap = StrokeCap.Round)
-    drawCircle(ArtGlove, 0.22f * s, hand1)
-    drawCircle(ArtGlove, 0.22f * s, hand2)
-    // tułów + głowa
-    drawCircle(ArtKeeper, 0.50f * s, body)
-    drawCircle(ArtSkin, 0.28f * s, Offset(body.x - dir * 0.35f * s, body.y - 0.35f * s))
 }

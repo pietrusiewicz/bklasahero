@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -24,7 +23,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import pl.bklasahero.engine.FrameBuffer
 
 // --- paleta ---
@@ -63,6 +61,21 @@ private const val Z_MAX = 11f            // głębokość: 0 = punkt karny, 11 =
 
 // Skala figur — większe postacie na ekranie.
 private fun figureScale(h: Float): Float = (h / 1150f).coerceIn(0.9f, 2.6f)
+
+// Stroje zawodników (wspólny moduł sylwetek — Figures.kt).
+private val ShooterKit = KitColors(
+    jersey = ShooterJersey,
+    shorts = ShooterShorts,
+    socks = ShooterSock,
+    skin = ShooterSkin,
+)
+private val KeeperKit = KitColors(
+    jersey = KeeperJersey,
+    shorts = Color(0xFF20242A),
+    socks = Color(0xFF20242A),
+    boots = Boot,
+    skin = KeeperSkin,
+)
 
 @Composable
 fun MatchRenderer(@Suppress("UNUSED_PARAMETER") state: pl.bklasahero.ui.AppUiState) {
@@ -351,7 +364,7 @@ private fun DrawScope.drawTrajectory(t: Float) {
 }
 
 // ---------------------------------------------------------------------------
-// Bramkarz (nurkujący) — większa sylwetka
+// Bramkarz — sylwetka ze wspólnego modułu (nurkowanie przez obrót ciała)
 // ---------------------------------------------------------------------------
 private fun DrawScope.drawKeeper(t: Float) {
     val w = size.width
@@ -359,69 +372,46 @@ private fun DrawScope.drawKeeper(t: Float) {
     val floats = FrameBuffer.floats
     var center = Offset(w / 2f, h * GOAL_LINE_Y)
     var dive = 0f
+    var side = 1f
     if (FrameBuffer.keeperSamples > 0) {
         val timeS = t * FrameBuffer.durationS
         val (kx, ky, kz) = keeperPoint(floats, timeS)
         center = worldToScreen(kx, ky, kz)
         val start = FrameBuffer.HEADER_FLOATS + FrameBuffer.ballSamples * FrameBuffer.BALL_FLOATS_PER_SAMPLE
         dive = interpolateSample(floats, start, FrameBuffer.keeperSamples, FrameBuffer.KEEPER_FLOATS_PER_SAMPLE, timeS, 4)
+        side = interpolateSample(floats, start, FrameBuffer.keeperSamples, FrameBuffer.KEEPER_FLOATS_PER_SAMPLE, timeS, 5)
     }
-    val scale = figureScale(h)
-    val r = 22f * scale
-
-    // Nurkowanie: sylwetka obraca się niemal do poziomu i wyciąga ręce do piłki.
-    rotate(degrees = dive * 78f, pivot = center) {
-        // ręce (z rękawicami) — rozłożone i wyciągnięte przy nurkowaniu
-        val armSpread = 44f * scale * (1f + dive)
-        val armLift = 14f * scale * (1f - dive)
-        drawLine(KeeperJersey, center, Offset(center.x - armSpread, center.y - armLift), strokeWidth = 10f * scale, cap = StrokeCap.Round)
-        drawLine(KeeperJersey, center, Offset(center.x + armSpread, center.y - armLift), strokeWidth = 10f * scale, cap = StrokeCap.Round)
-        drawCircle(KeeperGlove, radius = 9f * scale, center = Offset(center.x - armSpread, center.y - armLift))
-        drawCircle(KeeperGlove, radius = 9f * scale, center = Offset(center.x + armSpread, center.y - armLift))
-        // nogi
-        drawLine(Boot, center, Offset(center.x - 14f * scale, center.y + 34f * scale), strokeWidth = 11f * scale, cap = StrokeCap.Round)
-        drawLine(Boot, center, Offset(center.x + 14f * scale, center.y + 34f * scale), strokeWidth = 11f * scale, cap = StrokeCap.Round)
-        // tułów
-        drawCircle(KeeperJersey, radius = r, center = center)
-        // głowa
-        drawCircle(KeeperSkin, radius = r * 0.55f, center = Offset(center.x, center.y - r * 1.15f))
+    // Kierunek nurkowania: 0 = lewo, 2 = prawo; przy środku patrzymy na wychylenie ciała.
+    val dir = when {
+        side < 0.5f -> -1f
+        side > 1.5f -> 1f
+        else -> if (center.x < w / 2f) -1f else 1f
     }
+    drawGoalkeeper(
+        feetX = center.x,
+        // Środek ciała bramkarza jest w rdzeniu na 0,95 m — stopy są niżej.
+        feetY = center.y + 0.086f * h,
+        height = 0.16f * h,
+        kit = KeeperKit,
+        dir = dir,
+        progress = dive,
+        glove = KeeperGlove,
+    )
 }
 
 // ---------------------------------------------------------------------------
-// Strzelec (widok od tyłu) — większa sylwetka
+// Strzelec (widok od tyłu) — sylwetka ze wspólnego modułu
 // ---------------------------------------------------------------------------
 private fun DrawScope.drawShooter(@Suppress("UNUSED_PARAMETER") t: Float) {
     val w = size.width
     val h = size.height
-    val scale = figureScale(h)
     val cx = w / 2f
     val baseY = h * SHOOTER_Y
-
-    // nogi (łydki + buty)
-    drawLine(ShooterSock, Offset(cx - 20f * scale, baseY - 44f * scale), Offset(cx - 24f * scale, baseY), strokeWidth = 13f * scale, cap = StrokeCap.Round)
-    drawLine(ShooterSock, Offset(cx + 20f * scale, baseY - 44f * scale), Offset(cx + 24f * scale, baseY), strokeWidth = 13f * scale, cap = StrokeCap.Round)
-    drawCircle(Boot, radius = 11f * scale, center = Offset(cx - 26f * scale, baseY))
-    drawCircle(Boot, radius = 11f * scale, center = Offset(cx + 26f * scale, baseY))
-    // spodenki
-    drawRoundRectShooter(ShooterShorts, cx - 26f * scale, baseY - 76f * scale, 52f * scale, 34f * scale)
-    // tułów (koszulka z numerem)
-    drawRoundRectShooter(ShooterJersey, cx - 30f * scale, baseY - 138f * scale, 60f * scale, 66f * scale)
-    drawCircle(color = Color.White, radius = 14f * scale, center = Offset(cx, baseY - 105f * scale))
-    // ręce (wzdłuż tułowia)
-    drawLine(ShooterJersey, Offset(cx - 32f * scale, baseY - 120f * scale), Offset(cx - 40f * scale, baseY - 80f * scale), strokeWidth = 10f * scale, cap = StrokeCap.Round)
-    drawLine(ShooterJersey, Offset(cx + 32f * scale, baseY - 120f * scale), Offset(cx + 40f * scale, baseY - 80f * scale), strokeWidth = 10f * scale, cap = StrokeCap.Round)
-    // głowa
-    drawCircle(ShooterSkin, radius = 20f * scale, center = Offset(cx, baseY - 156f * scale))
-}
-
-// rysuje zaokrąglony prostokąt (pomocnicza)
-private fun DrawScope.drawRoundRectShooter(color: Color, left: Float, top: Float, w: Float, h: Float) {
-    drawRoundRect(
-        color = color,
-        topLeft = Offset(left, top),
-        size = Size(w, h),
-        cornerRadius = CornerRadius(10f, 10f),
+    drawPlayerBackView(
+        centerX = cx,
+        feetY = baseY,
+        height = 0.16f * h,
+        kit = ShooterKit,
     )
 }
 
