@@ -73,7 +73,8 @@ fun reduce(state: AppUiState, intent: AppIntent, container: AppContainer): AppUi
         AppIntent.ToggleTheme -> state.copy(darkTheme = !state.darkTheme)
         AppIntent.FinishTutorial -> {
             container.markTutorialSeen()
-            state.copy(screen = AppScreen.Home)
+            // Po samouczku: nowy gracz wybiera miasto, powracający wraca do menu.
+            state.copy(screen = if (state.careerReady) AppScreen.Home else AppScreen.NewCareer)
         }
         is AppIntent.SetScoreboard -> state.copy(scoreboard = intent.scoreboard)
     }

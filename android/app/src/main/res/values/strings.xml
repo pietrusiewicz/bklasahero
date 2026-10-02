@@ -18,13 +18,15 @@
     <string name="menu_theme">🌓 Theme</string>
     <string name="menu_back">← Back to menu</string>
 
-    <string name="tutorial_title">Welcome to B-Klasa Hero!</string>
-    <string name="tutorial_subtitle">Here\'s how a penalty shootout works:</string>
-    <string name="tutorial_step_shoot">Drag across the goal to aim — hold longer for a harder shot</string>
-    <string name="tutorial_step_defend">When defending, swipe the way you want to dive</string>
-    <string name="tutorial_step_aim">Aim for the corners — they\'re harder to save</string>
-    <string name="tutorial_step_match">Win matches and climb the league table</string>
-    <string name="tutorial_start">Start playing</string>
+    <string name="tutorial_p1_title">Welcome to B-Klasa Hero!</string>
+    <string name="tutorial_p1_body">You\'ll play a series of penalty shootouts in your local league. First, pick the city you play for.</string>
+    <string name="tutorial_p2_title">How to shoot</string>
+    <string name="tutorial_p2_body">Drag your finger across the goal to aim. Hold longer for a harder shot — but a hard shot is less accurate. Release to shoot.</string>
+    <string name="tutorial_p3_title">How to defend</string>
+    <string name="tutorial_p3_body">When your opponent shoots, swipe the way you want to dive. Up for a high dive, down for a low one.</string>
+    <string name="tutorial_next">Next</string>
+    <string name="tutorial_skip">Skip</string>
+    <string name="tutorial_choose_city">Choose your city</string>
 
     <string name="new_career_title">Start a new career</string>
     <string name="new_career_nickname">Nickname</string>

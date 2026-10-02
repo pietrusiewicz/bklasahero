@@ -17,13 +17,15 @@
     <string name="menu_theme">🌓 Motyw</string>
     <string name="menu_back">← Wróć do menu</string>
 
-    <string name="tutorial_title">Witaj w B-Klasa Hero!</string>
-    <string name="tutorial_subtitle">Tak wyglądają rzuty karne:</string>
-    <string name="tutorial_step_shoot">Przeciągnij palcem po bramce, aby wycelować — przytrzymaj dłużej, żeby strzelić mocniej</string>
-    <string name="tutorial_step_defend">W obronie przesuń palcem w stronę, w którą chcesz zanurkować</string>
-    <string name="tutorial_step_aim">Mierz w rogi — trudniej je obronić</string>
-    <string name="tutorial_step_match">Wygrywaj mecze i pnij się w tabeli ligi</string>
-    <string name="tutorial_start">Zacznij grać</string>
+    <string name="tutorial_p1_title">Witaj w B-Klasa Hero!</string>
+    <string name="tutorial_p1_body">Zagrasz serię rzutów karnych w swojej lidze. Najpierw wybierz miasto, dla którego grasz.</string>
+    <string name="tutorial_p2_title">Jak się strzela</string>
+    <string name="tutorial_p2_body">Przeciągnij palcem po bramce, żeby wycelować. Przytrzymaj dłużej = mocniejszy strzał, ale mniej celny. Puść palec, żeby strzelić.</string>
+    <string name="tutorial_p3_title">Jak się broni</string>
+    <string name="tutorial_p3_body">Gdy strzela przeciwnik, przesuń palcem w stronę, w którą chcesz zanurkować. W górę = wysoki skok, w dół = niski.</string>
+    <string name="tutorial_next">Dalej</string>
+    <string name="tutorial_skip">Pomiń</string>
+    <string name="tutorial_choose_city">Wybierz swoje miasto</string>
 
     <string name="new_career_title">Rozpocznij nową karierę</string>
     <string name="new_career_nickname">Pseudonim</string>
