@@ -12,11 +12,34 @@
     <string name="app_loading_protocol">Protocol v%1$d</string>
     <string name="app_loading_hint">Preparing the pitch, polishing the ball…</string>
 
+    <string name="home_play">Play</string>
     <string name="home_new_career">New career</string>
     <string name="home_continue_career">Continue career</string>
+    <string name="home_start_title">Start in the B class</string>
+    <string name="home_start_hint">Pick your city and play the first match: a five-kick shootout.</string>
+    <string name="home_locked_hint">The table and fixtures unlock once your career starts.</string>
+    <string name="home_season">Season %1$d</string>
+    <string name="home_level_xp">Level %1$d · %2$d/%3$d XP</string>
+    <string name="home_footer">Version %1$s · protocol v%2$d</string>
+    <string name="home_new_career_hint">Deletes current progress</string>
+    <string name="home_new_career_confirm_title">Start a new career?</string>
+    <string name="home_new_career_confirm_body">The career of %1$s will be deleted and you will start over in the B class. This cannot be undone.</string>
+    <string name="home_new_career_confirm_ok">Yes, start over</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="menu_career">Career</string>
     <string name="menu_how_to_play">How to play?</string>
-    <string name="menu_theme">🌓 Theme</string>
-    <string name="menu_back">← Back to menu</string>
+    <string name="menu_how_to_play_hint">Rules in 3 steps</string>
+    <string name="menu_theme">Theme</string>
+    <string name="menu_back">← Back</string>
+
+    <string name="toast_saved">Career saved</string>
+    <string name="toast_places_failed">Could not load the list of towns.</string>
+    <string name="toast_error">Something went wrong: %1$s</string>
+
+    <string name="match_abort_title">Abort the match?</string>
+    <string name="match_abort_body">An unfinished match is not saved. You will return to the career screen.</string>
+    <string name="match_abort_ok">Abort match</string>
+    <string name="match_abort_cancel">Keep playing</string>
 
     <string name="tutorial_p1_title">Welcome to B-Klasa Hero!</string>
     <string name="tutorial_p1_body">You\'ll play a series of penalty shootouts in your local league. First, pick the city you play for.</string>
@@ -41,6 +64,10 @@
     <string name="career_fixtures">Fixtures</string>
     <string name="career_save">Save</string>
 
+    <string name="match_map_distance">%1$s km</string>
+    <string name="match_preview_towns">%1$s · %2$s km · %3$s</string>
+    <string name="match_preview_meta">Round %1$d · %2$s</string>
+    <string name="match_preview_decisive">Promotion decider</string>
     <string name="match_tap_to_shoot">Get ready for the shootout</string>
     <string name="match_start_shootout">Start penalty shootout</string>
     <string name="result_swipe_to_continue">Swipe to continue</string>
@@ -66,4 +93,12 @@
     <string name="table_title">League table</string>
     <string name="fixtures_title">Fixtures</string>
     <string name="fixtures_round">Round %1$d</string>
+    <string name="table_col_team">Team</string>
+    <string name="table_col_goals">Goals</string>
+    <string name="table_col_points">Pts</string>
+    <string name="league_no_data">No data</string>
+    <string name="stat_matches">Matches</string>
+    <string name="stat_wins">Wins</string>
+    <string name="stat_goals">Goals</string>
+    <string name="stat_saves">Saves</string>
 </resources>

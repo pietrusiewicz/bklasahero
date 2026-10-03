@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
@@ -25,6 +26,7 @@ import pl.bklasahero.engine.NativeBridge
 import pl.bklasahero.ui.AppIntent
 import pl.bklasahero.ui.AppScreen
 import pl.bklasahero.ui.AppUiState
+import pl.bklasahero.ui.MapPoint
 import pl.bklasahero.ui.Scoreboard
 import pl.bklasahero.ui.reduce
 
@@ -77,7 +79,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
                 put("homeOsmId", homeOsmId)
             }
             NativeBridge.command(cmd)
-                .onSuccess { data -> _uiState.update { it.copy(careerJson = data, careerReady = true, screen = AppScreen.Career) } }
+                .onSuccess { data -> _uiState.update { it.copy(careerJson = data, careerReady = true, screen = AppScreen.Career, navStack = emptyList()) } }
                 .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
         }
     }
@@ -161,7 +163,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
             NativeBridge.command(buildJsonObject { put("cmd", "finishMatch") })
                 .onSuccess {
                     FrameBuffer.clear()
-                    _uiState.update { it.copy(screen = AppScreen.Career, lastOutcomeKey = null) }
+                    _uiState.update { it.copy(screen = AppScreen.Career, navStack = emptyList(), lastOutcomeKey = null) }
                 }
                 .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
         }
@@ -223,7 +225,30 @@ private fun AppUiState.applyMatchSetup(data: JsonObject): AppUiState {
     val away = setup?.let { str(it, "opponentShort") } ?: ""
     val kps = setup?.get("rules")?.jsonObject?.get("kicksPerSide")?.jsonPrimitive?.intOrNull ?: 5
     return copy(
-        scoreboard = Scoreboard(home = home, away = away, kicksPerSide = kps),
+        scoreboard = Scoreboard(
+            home = home,
+            away = away,
+            // Zapowiedź meczu: miejscowości i odległość między nimi.
+            homeTown = setup?.let { str(it, "playerTown") } ?: "",
+            awayTown = setup?.let { str(it, "opponentTown") } ?: "",
+            distanceKm = setup?.get("distanceKm")?.jsonPrimitive?.doubleOrNull ?: 0.0,
+            mapPoints = setup?.get("map")?.jsonObject?.get("places")?.jsonArray
+                ?.mapNotNull { el ->
+                    val o = el as? JsonObject ?: return@mapNotNull null
+                    MapPoint(
+                        lat = o["lat"]?.jsonPrimitive?.doubleOrNull ?: return@mapNotNull null,
+                        lon = o["lon"]?.jsonPrimitive?.doubleOrNull ?: return@mapNotNull null,
+                        town = str(o, "town"),
+                        short = str(o, "short"),
+                        isPlayer = o["isPlayer"]?.jsonPrimitive?.booleanOrNull ?: false,
+                    )
+                }
+                .orEmpty(),
+            leagueLabel = setup?.let { str(it, "leagueLabel") } ?: "",
+            round = setup?.get("round")?.jsonPrimitive?.intOrNull ?: 0,
+            isDecisive = setup?.get("isDecisive")?.jsonPrimitive?.booleanOrNull ?: false,
+            kicksPerSide = kps,
+        ),
         lastOutcomeKey = null,
         lastKickRole = null,
     )

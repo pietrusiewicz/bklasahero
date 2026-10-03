@@ -11,11 +11,34 @@
     <string name="app_loading_protocol">Protokół v%1$d</string>
     <string name="app_loading_hint">Przygotowujemy boisko, czyścimy piłkę…</string>
 
+    <string name="home_play">Graj</string>
     <string name="home_new_career">Nowa kariera</string>
     <string name="home_continue_career">Kontynuuj karierę</string>
+    <string name="home_start_title">Zacznij od B klasy</string>
+    <string name="home_start_hint">Wybierz miasto i rozegraj pierwszy mecz: seria pięciu rzutów karnych.</string>
+    <string name="home_locked_hint">Tabela i terminarz odblokują się po rozpoczęciu kariery.</string>
+    <string name="home_season">Sezon %1$d</string>
+    <string name="home_level_xp">Poziom %1$d · %2$d/%3$d XP</string>
+    <string name="home_footer">Wersja %1$s · protokół v%2$d</string>
+    <string name="home_new_career_hint">Usuwa obecny postęp</string>
+    <string name="home_new_career_confirm_title">Rozpocząć nową karierę?</string>
+    <string name="home_new_career_confirm_body">Kariera gracza %1$s zostanie usunięta, a Ty zaczniesz od B klasy. Tej operacji nie można cofnąć.</string>
+    <string name="home_new_career_confirm_ok">Tak, zaczynam od nowa</string>
+    <string name="common_cancel">Anuluj</string>
+    <string name="menu_career">Kariera</string>
     <string name="menu_how_to_play">Jak grać?</string>
-    <string name="menu_theme">🌓 Motyw</string>
-    <string name="menu_back">← Wróć do menu</string>
+    <string name="menu_how_to_play_hint">Zasady w 3 krokach</string>
+    <string name="menu_theme">Motyw</string>
+    <string name="menu_back">← Wróć</string>
+
+    <string name="toast_saved">Kariera zapisana</string>
+    <string name="toast_places_failed">Nie udało się wczytać listy miejscowości.</string>
+    <string name="toast_error">Coś poszło nie tak: %1$s</string>
+
+    <string name="match_abort_title">Przerwać mecz?</string>
+    <string name="match_abort_body">Niedokończony mecz nie zostanie zapisany. Wrócisz na ekran kariery.</string>
+    <string name="match_abort_ok">Przerwij mecz</string>
+    <string name="match_abort_cancel">Graj dalej</string>
 
     <string name="tutorial_p1_title">Witaj w B-Klasa Hero!</string>
     <string name="tutorial_p1_body">Zagrasz serię rzutów karnych w swojej lidze. Najpierw wybierz miasto, dla którego grasz.</string>
@@ -40,6 +63,10 @@
     <string name="career_fixtures">Terminarz</string>
     <string name="career_save">Zapisz</string>
 
+    <string name="match_map_distance">%1$s km</string>
+    <string name="match_preview_towns">%1$s · %2$s km · %3$s</string>
+    <string name="match_preview_meta">Kolejka %1$d · %2$s</string>
+    <string name="match_preview_decisive">Mecz o awans</string>
     <string name="match_tap_to_shoot">Przygotuj się na serię rzutów karnych</string>
     <string name="match_start_shootout">Rozpocznij rzuty karne</string>
     <string name="result_swipe_to_continue">Przesuń, aby kontynuować</string>
@@ -65,4 +92,12 @@
     <string name="table_title">Tabela ligi</string>
     <string name="fixtures_title">Terminarz</string>
     <string name="fixtures_round">Kolejka %1$d</string>
+    <string name="table_col_team">Drużyna</string>
+    <string name="table_col_goals">Bramki</string>
+    <string name="table_col_points">Pkt</string>
+    <string name="league_no_data">Brak danych</string>
+    <string name="stat_matches">Mecze</string>
+    <string name="stat_wins">Wygrane</string>
+    <string name="stat_goals">Gole</string>
+    <string name="stat_saves">Obrony</string>
 </resources>
