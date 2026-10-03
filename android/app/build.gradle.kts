@@ -15,8 +15,8 @@ plugins {
 
 // Wersja z nadpisaniem przez CI: `-PversionName=... -PversionCode=...`.
 // Domyślnie używamy stałej semver z rdzenia (patrz scripts/bump-version.sh).
-val versionNameOverride = (project.findProperty("versionName") as String?) ?: "0.1.0"
-val versionCodeOverride = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 1
+val versionNameOverride = (project.findProperty("versionName") as String?) ?: "0.1.1"
+val versionCodeOverride = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 2
 
 android {
     namespace = "pl.bklasahero"
@@ -63,9 +63,23 @@ android {
         }
     }
 
-    // Release jest celowo NIEPODPISANY: F-Droid podpisuje własnym kluczem.
-    // Podpis dla GitHub Releases wykonuje scripts/sign-apk.sh na APK po buildzie
-    // (klucze żyją w sekretach CI, nie w repo).
+    // Release jest domyślnie NIEPODPISANY: F-Droid podpisuje własnym kluczem,
+    // a podpis dla GitHub Releases robi scripts/sign-apk.sh (klucze w sekretach).
+    // Gdy jednak ustawisz zmienne środowiskowe, Gradle podpisze APK od razu —
+    // wygodne przy lokalnej publikacji i w CI.
+    //   BKH_KEYSTORE, BKH_STORE_PASSWORD, BKH_KEY_ALIAS, BKH_KEY_PASSWORD
+    val keystoreFromEnv = System.getenv("BKH_KEYSTORE")
+    signingConfigs {
+        if (!keystoreFromEnv.isNullOrBlank()) {
+            create("localRelease") {
+                storeFile = file(keystoreFromEnv)
+                storePassword = System.getenv("BKH_STORE_PASSWORD")
+                keyAlias = System.getenv("BKH_KEY_ALIAS")
+                keyPassword = System.getenv("BKH_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
@@ -74,6 +88,9 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
+            if (!keystoreFromEnv.isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("localRelease")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
