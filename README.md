@@ -20,7 +20,12 @@ W grze:
 
 ## Zrzuty ekranu
 
-_(do dodania przed pierwszym release)_
+Podgląd menu głównego (mockup układu z `HomeScreen.kt`, nie zrzut z urządzenia —
+odświeżysz go przez `python3 tools/preview/render_menu_mockup.py docs/menu-preview.png`):
+
+![Menu główne — ciemny i jasny motyw](docs/menu-preview.png)
+
+_Zrzuty z urządzenia: do dodania przed pierwszym release._
 
 ## Jak zbudować
 
