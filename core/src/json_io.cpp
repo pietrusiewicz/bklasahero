@@ -352,11 +352,29 @@ std::string toJson(const MatchSetup& m) {
                     {"matchIndex", m.fixture.matchIndex}, {"round", m.fixture.round}};
     j["isDecisive"] = m.isDecisive;
     j["leagueLabel"] = m.leagueLabel;
+    // Miejscowości i odległość — zapowiedź meczu pokazuje, skąd jedzie rywal.
+    j["distanceKm"] = m.distanceKm;
     j["opponent"] = m.opponent.name;
     j["opponentShort"] = m.opponent.shortName;
+    j["opponentTown"] = m.opponent.town;
     j["playerClub"] = m.playerClub.name;
     j["playerClubShort"] = m.playerClub.shortName;
+    j["playerTown"] = m.playerClub.town;
     j["playerShootsFirst"] = messageKey(m.playerShootsFirst);
+    // Schematyczna mapka zapowiedzi: pozycje klubów ligi + para meczowa.
+    json places = json::array();
+    for (const Club& c : m.leagueClubs) {
+        places.push_back({{"isPlayer", c.isPlayer},
+                          {"lat", c.lat},
+                          {"lon", c.lon},
+                          {"short", c.shortName},
+                          {"town", c.town}});
+    }
+    j["map"] = {{"awayLat", m.opponent.lat},
+                {"awayLon", m.opponent.lon},
+                {"homeLat", m.playerClub.lat},
+                {"homeLon", m.playerClub.lon},
+                {"places", std::move(places)}};
     j["round"] = m.round;
     j["rules"] = {{"firstKicker", messageKey(m.rules.firstKicker)},
                   {"kicksPerSide", m.rules.kicksPerSide},

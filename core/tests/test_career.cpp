@@ -55,6 +55,42 @@ TEST(CareerTest, BeginMatchProducesSetup) {
     EXPECT_EQ(cr.value().state().phase, CareerPhase::MatchInProgress);
 }
 
+TEST(CareerTest, MatchSetupCarriesTownsAndDistance) {
+    // Zapowiedź meczu pokazuje, skąd jedzie rywal, więc setup musi nieść
+    // miejscowości obu klubów i policzoną odległość.
+    PlaceCatalog cat = makeCatalog();
+    NewCareerParams p{};
+    p.nickname = "Test";
+    p.homeOsmId = 1;  // Warszawa
+    p.language = Lang::Pl;
+    auto cr = Career::startNew(p, cat);
+    ASSERT_TRUE(cr.has_value());
+    Random rng(cr.value().state().seed);
+    auto setup = cr.value().beginMatch(rng);
+    ASSERT_TRUE(setup.has_value());
+
+    const MatchSetup& s = setup.value();
+    EXPECT_EQ(s.playerClub.town, "Warszawa");
+    EXPECT_FALSE(s.opponent.town.empty());
+    EXPECT_NE(s.opponent.town, s.playerClub.town);
+
+    const f64 expected = PlaceCatalog::distanceKm(
+        s.playerClub.lat, s.playerClub.lon, s.opponent.lat, s.opponent.lon);
+    EXPECT_NEAR(s.distanceKm, expected, 1e-6);
+    EXPECT_GT(s.distanceKm, 0.0);
+
+    // Mapka zapowiedzi: cała liga z pozycjami, dokładnie jeden klub gracza.
+    EXPECT_EQ(s.leagueClubs.size(), 10u);
+    std::size_t players = 0;
+    for (const Club& c : s.leagueClubs) {
+        EXPECT_NE(c.town.empty(), true);
+        EXPECT_NE(c.lat, 0.0);
+        EXPECT_NE(c.lon, 0.0);
+        if (c.isPlayer) ++players;
+    }
+    EXPECT_EQ(players, 1u);
+}
+
 TEST(CareerTest, AwardXpGrantsLevelsAndPoints) {
     PlaceCatalog cat = makeCatalog();
     NewCareerParams p{};

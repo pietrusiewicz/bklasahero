@@ -463,7 +463,10 @@ Result<MatchSetup> Career::beginMatch(Random& rng) {
     setup.cpuKeeper = KeeperProfile::forTier(s.tierIndex, oppStrength / 100.0);
     setup.leagueLabel = Pyramid::leagueLabel(s.tierIndex, s.homeVoivodeship, s.language);
     setup.seasonNumber = s.seasonNumber;
+    // Odległość „nasza miejscowość → miejscowość rywala" na potrzeby zapowiedzi.
+    setup.distanceKm = PlaceCatalog::distanceKm(pc.lat, pc.lon, opp.lat, opp.lon);
     setup.isDecisive = (round >= league.roundCount() - 2);
+    setup.leagueClubs = league.clubs();
 
     s.phase = CareerPhase::MatchInProgress;
     return setup;

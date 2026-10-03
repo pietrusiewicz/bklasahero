@@ -85,6 +85,12 @@ public:
     /// Wybór miejscowości pod ligę regionalną: najbliższe + wymuszona różnorodność
     /// (nie więcej niż jeden klub z tej samej miejscowości, preferowany mix
     /// miasteczek i wsi dla klimatu B klasy).
+    ///
+    /// Promień zaczyna się od `TierInfo::radiusKm` i rośnie, gdy w okolicy jest
+    /// mało miejscowości — ale nie bardziej niż 2.5× (liga ma zostać lokalna).
+    /// Gdy i to nie wystarczy, dopełniamy najbliższymi miejscowościami z TEGO
+    /// SAMEGO województwa; dopiero ostateczność sięga po największe miasta
+    /// w kraju (bardzo mały katalog, np. w testach).
     [[nodiscard]] std::vector<const Place*> selectRegionalPlaces(const Place& homePlace,
                                                                 i32 tierIndex,
                                                                 std::size_t count,

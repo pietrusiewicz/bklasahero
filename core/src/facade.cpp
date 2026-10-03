@@ -426,6 +426,9 @@ Result<njson> Facade::Impl::dispatch(std::string_view cmd, const njson& args) {
             r["clubIndex"] = row.clubIndex;
             r["name"] = c.name;
             r["shortName"] = c.shortName;
+            // Miejscowość, z której pochodzi klub — UI pokazuje ją obok skrótu,
+            // żeby było widać, że liga składa się z okolicznych miejscowości.
+            r["town"] = c.town;
             r["isPlayer"] = c.isPlayer;
             r["played"] = row.played;
             r["wins"] = row.wins;
@@ -451,6 +454,8 @@ Result<njson> Facade::Impl::dispatch(std::string_view cmd, const njson& args) {
             j["away"] = lg.clubs()[f.away].name;
             j["homeShort"] = lg.clubs()[f.home].shortName;
             j["awayShort"] = lg.clubs()[f.away].shortName;
+            j["homeTown"] = lg.clubs()[f.home].town;
+            j["awayTown"] = lg.clubs()[f.away].town;
             j["played"] = lg.result(f.matchIndex).played;
             j["homeGoals"] = lg.result(f.matchIndex).homeGoals;
             j["awayGoals"] = lg.result(f.matchIndex).awayGoals;

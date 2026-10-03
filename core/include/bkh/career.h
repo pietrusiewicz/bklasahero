@@ -265,8 +265,16 @@ struct MatchSetup {
     KeeperProfile cpuKeeper{};
     std::string leagueLabel;
     i32 seasonNumber = 1;
+    /// Odległość między miejscowością klubu gracza a miejscowością rywala [km].
+    /// Zapowiedź meczu pokazuje ją, żeby było widać, czy to derby, czy wyjazd
+    /// na drugi koniec ligi.
+    f64 distanceKm = 0.0;
     /// Czy mecz jest „o awans" (wpływa na presję i komunikaty).
     bool isDecisive = false;
+    /// Wszystkie kluby bieżącej ligi (z pozycjami) — zapowiedź meczu rysuje
+    /// z tego schematyczną mapkę okolicy: gdzie jesteśmy, gdzie jedziemy
+    /// i jak rozrzucona jest liga.
+    std::vector<Club> leagueClubs;
 };
 
 /// Rezultat meczu gracza do zapisania w lidze i statystykach.

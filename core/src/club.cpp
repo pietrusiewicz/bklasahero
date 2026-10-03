@@ -334,41 +334,71 @@ namespace {
 // Właściwa implementacja nadawania id jest w ClubGenerator::makeLeague.
 }
 
+namespace {
+// Liga regionalna ma zostać LOKALNA: promień doboru rywali rośnie, gdy w okolicy
+// jest mało miejscowości, ale nigdy powyżej `radiusKm * kRegionalRadiusCapFactor`.
+// Bez tego czapki B klasa potrafiła ściągnąć klub z miejscowości oddalonej o
+// ~90 km, a przy ubogim katalogu nawet z drugiego końca Polski.
+constexpr f64 kRegionalRadiusCapFactor = 2.5;
+constexpr f64 kRegionalRadiusGrowth = 1.6;
+constexpr int kRegionalPasses = 5;
+}  // namespace
+
 std::vector<const Place*> ClubGenerator::selectRegionalPlaces(const Place& homePlace,
                                                              i32 tierIndex, std::size_t count,
                                                              Random& rng) const {
     const TierInfo& tinfo = Pyramid::tier(tierIndex);
+    const f64 maxRadius = tinfo.radiusKm * kRegionalRadiusCapFactor;
     f64 radius = tinfo.radiusKm;
+
     std::vector<const Place*> result;
+    result.reserve(count);
     std::set<i64> seenIds;
     seenIds.insert(homePlace.osmId);
-    // Próbujemy coraz większych promieni.
-    for (int pass = 0; pass < 4 && result.size() < count; ++pass) {
-        auto nearby = catalog_->nearest(homePlace.lat, homePlace.lon, radius,
-                                        count * 2 + 4, 0, true);
-        // Filtrujemy duplikaty nazw (żeby nie było dwóch LKS Orzeł Bartodzieje).
-        std::set<std::string> seenNames;
-        seenNames.insert(homePlace.name);
-        for (const Place* p : nearby) {
-            if (seenIds.contains(p->osmId)) continue;
-            if (seenNames.contains(p->name)) continue;
-            result.push_back(p);
-            seenIds.insert(p->osmId);
-            seenNames.insert(p->name);
-            if (result.size() >= count) break;
+    // Nazwy też muszą być unikalne (żeby nie było dwóch „LKS Orzeł Zalesie”),
+    // dlatego zbiór trzymamy poza pętlą przebiegów.
+    std::set<std::string> seenNames;
+    seenNames.insert(homePlace.name);
+
+    auto add = [&](const Place* p) {
+        if (result.size() >= count) return;
+        if (seenIds.contains(p->osmId)) return;
+        if (seenNames.contains(p->name)) return;
+        result.push_back(p);
+        seenIds.insert(p->osmId);
+        seenNames.insert(p->name);
+    };
+
+    // Pierścienie wokół miasta gracza: najpierw najbliższa okolica, potem coraz
+    // dalej — ale w granicach `maxRadius`.
+    for (int pass = 0; pass < kRegionalPasses && result.size() < count; ++pass) {
+        for (const Place* p : catalog_->nearest(homePlace.lat, homePlace.lon, radius,
+                                                count * 4 + 8, 0, true)) {
+            add(p);
         }
-        radius *= 1.8;
+        if (radius >= maxRadius) break;
+        radius = std::min(radius * kRegionalRadiusGrowth, maxRadius);
     }
-    // Gdyby mimo wszystko za mało, dociągamy największe miejscowości w kraju.
+
+    // Wciąż za mało? Dosypujemy najbliższe miejscowości z TEGO SAMEGO
+    // województwa — geograficznie wciąż „nasz" region, w przeciwieństwie do
+    // losowych dużych miast z całego kraju.
+    if (result.size() < count && homePlace.voivodeship != Place::kUnknownVoivodeship) {
+        auto sameVoivodeship = catalog_->inVoivodeship(homePlace.voivodeship, catalog_->size());
+        std::sort(sameVoivodeship.begin(), sameVoivodeship.end(),
+                  [&homePlace](const Place* a, const Place* b) {
+                      return PlaceCatalog::distanceKm(homePlace, *a) <
+                             PlaceCatalog::distanceKm(homePlace, *b);
+                  });
+        for (const Place* p : sameVoivodeship) add(p);
+    }
+
+    // Ostateczność (bardzo mały katalog, np. w testach): cokolwiek, byle liga
+    // była pełna — kolejność jest deterministyczna.
     if (result.size() < count) {
-        auto largest = catalog_->largest(64, 1000);
-        for (const Place* p : largest) {
-            if (result.size() >= count) break;
-            if (seenIds.contains(p->osmId)) continue;
-            result.push_back(p);
-            seenIds.insert(p->osmId);
-        }
+        for (const Place* p : catalog_->largest(64, 0)) add(p);
     }
+
     rng.shuffle(result.begin(), result.end());
     if (result.size() > count) result.resize(count);
     return result;

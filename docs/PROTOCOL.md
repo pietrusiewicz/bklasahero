@@ -79,6 +79,19 @@ Kody błędów: `core/include/bkh/result.h` (namespace `bkh::errc`).
 
 Kolory są liczbami całkowitymi ARGB (`0xAARRGGBB`) — Kotlin robi `Color(value.toULong())`.
 
+### Kluby w `table[]` i `fixtures[]`
+
+Wiersze `table[]` niosą `name`, `shortName` **oraz `town`** — miejscowość, z której
+klub pochodzi. Nazwy klubów są generowane z okolicznych miejscowości (dla lig
+regionalnych wybiera je `ClubGenerator::selectRegionalPlaces`: promień rośnie
+maksymalnie 2,5× względem `TierInfo::radiusKm`, a dopełnienie idzie z tego samego
+województwa), więc `town` pokazuje związek ligi z mapą. UI skleja `shortName`
+z `town` („Orzeł Węgrzynowo"), pomijając miejscowość, gdy skrót już ją niesie
+(forma przymiotnikowa, np. „Węgrzynowianka").
+
+Pary w `fixtures[]` mają `home`/`away` (pełne nazwy), `homeShort`/`awayShort`
+oraz `homeTown`/`awayTown`.
+
 ### Obiekt `kick` (rezultat rzutu)
 
 ```json
@@ -109,14 +122,22 @@ Klucze `outcomeKey`, `woodworkKey`, `zoneKey`, `keeperSideKey` są kluczami ASCI
 ```json
 {"fixture": {"away": 3, "home": 0, "matchIndex": 17, "round": 3},
  "isDecisive": false, "leagueLabel": "B klasa · mazowieckie",
- "opponent": "LKS Orzeł Bartodzieje", "opponentShort": "Orzeł",
- "playerClub": "KS Błysk Radom", "playerClubShort": "Błysk",
+ "distanceKm": 17.9,
+ "opponent": "LKS Orzeł Bartodzieje", "opponentShort": "Orzeł", "opponentTown": "Bartodzieje",
+ "playerClub": "KS Błysk Radom", "playerClubShort": "Błysk", "playerTown": "Radom",
  "playerShootsFirst": "home", "round": 3, "seasonNumber": 1,
+ "map": {"homeLat": 51.4027, "homeLon": 21.1471, "awayLat": 52.1, "awayLon": 20.9,
+         "places": [{"isPlayer": true, "lat": 51.4027, "lon": 21.1471,
+                     "short": "Błysk", "town": "Radom"}, …]},
  "rules": {"firstKicker": "home", "kicksPerSide": 5, "maxSuddenDeathRounds": 10, "suddenDeath": false}}
 ```
 
 Gracz zawsze gra stroną **Home** (`playerClub*`), przeciwnik — **Away** (`opponent*`).
 `fixture.home`/`fixture.away` to indeksy klubów w `career.league.clubs`.
+`playerTown`/`opponentTown` oraz `distanceKm` (odległość ortodromiczna między
+tymi miejscowościami) napędzają zapowiedź meczu — patrz `MatchScreen.kt`.
+`map.places[]` to wszystkie kluby bieżącej ligi z pozycjami; UI rysuje z tego
+schematyczną mapkę okolicy (bez kafelków — gra nie ma uprawnienia INTERNET).
 
 ### Obiekt `career`
 
