@@ -28,6 +28,7 @@ import tempfile
 import zlib
 
 DESIGN = 100.0  # przestrzeń projektu: 100×100 jednostek
+DESIGNS = ("laurel", "shield", "pennant", "net", "roundel", "shot")
 
 VARIANTS = {
     1: dict(  # głęboka zieleń + złoty laur (domyślny)
@@ -168,6 +169,28 @@ class Raster:
                 if inside:
                     self._put(x, y, color, 1.0)
 
+    def rect(self, x0, y0, x1, y1, color) -> None:
+        ax0, ay0, ax1, ay1 = self._bbox(min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+        s = self.scale
+        for y in range(ay0, ay1 + 1):
+            if not (y0 * s <= y + 0.5 <= y1 * s):
+                continue
+            for x in range(ax0, ax1 + 1):
+                if x0 * s <= x + 0.5 <= x1 * s:
+                    self._put(x, y, color, 1.0)
+
+    def ring(self, cx, cy, r, width, color) -> None:
+        x0, y0, x1, y1 = self._bbox(cx - r - width, cy - r - width, cx + r + width, cy + r + width)
+        s = self.scale
+        ro, ri = (r + width / 2.0) * s, max(0.0, (r - width / 2.0)) * s
+        for y in range(y0, y1 + 1):
+            dy = y + 0.5 - cy * s
+            for x in range(x0, x1 + 1):
+                dx = x + 0.5 - cx * s
+                d2 = dx * dx + dy * dy
+                if ri * ri <= d2 <= ro * ro:
+                    self._put(x, y, color, 1.0)
+
     def mask_round_rect(self, corner_ratio=0.18) -> None:
         rr = DESIGN * corner_ratio * self.scale
         w = self.w
@@ -251,19 +274,117 @@ def draw_mark(r: Raster, v: dict, with_background: bool = True) -> None:
         r.polygon(patch, v["patch"])
 
 
-def icon(size: int, variant: int = 1, round_icon: bool = False, adaptive: bool = False) -> Raster:
+def draw_ball(r: Raster, cx: float, cy: float, radius: float, v: dict) -> None:
+    """Piłka: kremowa kula + środkowy pięciokąt + łaty przy brzegu."""
+    scale = radius / BALL_R
+    r.circle(cx, cy, radius, v["ball"])
+    pent = [(cx + PENT_R * scale * math.sin(math.radians(90 + k * 72)),
+             cy - PENT_R * scale * math.cos(math.radians(90 + k * 72))) for k in range(5)]
+    r.polygon(pent, v["patch"])
+    for k in range(5):
+        ang = math.radians(-90 + k * 72)
+        pxx = cx + PATCH_D * scale * math.cos(ang)
+        pyy = cy + PATCH_D * scale * math.sin(ang)
+        patch = [(pxx + PATCH_R * scale * math.cos(ang + math.radians(90 + j * 72)),
+                  pyy + PATCH_R * scale * math.sin(ang + math.radians(90 + j * 72))) for j in range(5)]
+        r.polygon(patch, v["patch"])
+
+
+def draw_design(r: Raster, v: dict, design: str) -> None:
+    """Znak aplikacji. `design` wybiera koncepcję (kształt), `v` kolory."""
+    r.gradient(v["bg_top"], v["bg_bottom"])
+    r.radial(BALL_CX, BALL_CY, 62.0, v["glow"], 0.35)
+    gold, cream, patch = v["laurel"], v["ball"], v["patch"]
+
+    if design == "laurel":
+        draw_mark(r, v, with_background=False)
+
+    elif design == "shield":
+        # tarcza herbowa z piłką i złotym pasem
+        outer = [(50, 9), (87, 20), (87, 56), (50, 91), (13, 56), (13, 20)]
+        inner = [(50, 17), (80, 26), (80, 54), (50, 82), (20, 54), (20, 26)]
+        r.polygon(outer, gold)
+        r.polygon(inner, v["bg_bottom"])
+        r.radial(50, 44, 40, v["glow"], 0.30)
+        draw_ball(r, 50, 42, 15.5, v)
+        r.rect(26, 57, 74, 62, gold)
+        for k in range(3):
+            r.circle(42 + k * 8, 69, 2.4, gold)
+
+    elif design == "pennant":
+        # proporzec na maszcie
+        r.rect(23, 14, 29, 88, gold)
+        r.circle(26, 13, 3.4, gold)
+        tri_out = [(31, 19), (89, 37), (31, 55)]
+        tri_in = [(36, 25), (79, 37), (36, 49)]
+        r.polygon(tri_out, gold)
+        r.polygon(tri_in, v["bg_bottom"])
+        draw_ball(r, 52, 37, 9.5, v)
+
+    elif design == "net":
+        # piłka w siatce bramki
+        r.rect(10, 16, 90, 18.6, cream)
+        r.rect(10, 16, 12.6, 74, cream)
+        r.rect(87.4, 16, 90, 74, cream)
+        for i in range(1, 9):
+            x = 10 + i * 10.0
+            r.rect(x - 0.5, 18, x + 0.5, 74, (cream[0] // 2, cream[1] // 2, cream[2] // 2))
+        for i in range(1, 6):
+            y = 16 + i * 9.6
+            r.rect(12, y - 0.5, 88, y + 0.5, (cream[0] // 2, cream[1] // 2, cream[2] // 2))
+        draw_ball(r, 54, 58, 19.0, v)
+
+    elif design == "roundel":
+        # okrągła odznaka: złoty pierścień, piłka i kropki
+        r.ring(50, 50, 37, 4.5, gold)
+        draw_ball(r, 50, 44, 16.5, v)
+        for k in range(3):
+            r.circle(41 + k * 9, 71, 2.6, gold)
+
+    elif design == "shot":
+        # piłka w locie ze smugami
+        for y, base, tip in ((34, 6, 34), (48, 8, 42), (62, 6, 34)):
+            r.polygon([(base, y - 5.4), (tip, y), (base, y + 5.4)], gold)
+        draw_ball(r, 62, 48, 21.0, v)
+
+    else:
+        raise SystemExit("nieznany projekt: %s" % design)
+
+
+def icon(size: int, variant: int = 1, round_icon: bool = False, adaptive: bool = False,
+         design: str = "laurel") -> Raster:
     v = VARIANTS[variant]
     r = Raster(size)
     if adaptive:
         r.gradient(v["bg_top"], v["bg_bottom"])
         r.radial(BALL_CX, BALL_CY, 62.0, v["glow"], 0.35)
         mark = Raster(size)
-        draw_mark(mark, v, with_background=False)
-        _composite_scaled(r, mark, 0.62)
+        draw_design(mark, v, design)
+        # znak bez tła: zostawiamy tylko piksele różniące się od gradientu
+        _composite_mark(r, mark, 0.62)
     else:
-        draw_mark(r, v, with_background=True)
+        draw_design(r, v, design)
         r.mask_circle() if round_icon else r.mask_round_rect()
     return r
+
+
+def _composite_mark(dst: Raster, src: Raster, scale: float) -> None:
+    """Wkleja sam ZNAK (nie tło) — piksele inne niż lokalny gradient."""
+    dsz, ssz = dst.w, src.w
+    half, off = ssz / 2.0, dsz / 2.0
+    for y in range(dsz):
+        sy = int((y - off) / scale + half)
+        if sy < 0 or sy >= ssz:
+            continue
+        for x in range(dsz):
+            sx = int((x - off) / scale + half)
+            if sx < 0 or sx >= ssz:
+                continue
+            i = (sy * ssz + sx) * 4
+            if not src.px[i + 3]:
+                continue
+            # piksele tła mają kolor z tego samego gradientu — pomijamy je
+            dst._put(x, y, (src.px[i], src.px[i + 1], src.px[i + 2]), 1.0)
 
 
 def _composite_scaled(dst: Raster, src: Raster, scale: float) -> None:
@@ -375,60 +496,76 @@ def vector_foreground(variant: int = 1) -> str:
 DENSITIES = {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}
 
 
-def generate_res(res_dir: str, variant: int = 1) -> None:
+def generate_res(res_dir: str, variant: int = 1, design: str = "laurel") -> None:
     for density, size in DENSITIES.items():
         folder = os.path.join(res_dir, "mipmap-%s" % density)
         os.makedirs(folder, exist_ok=True)
-        icon(size, variant).to_png(os.path.join(folder, "ic_launcher.png"))
-        icon(size, variant, round_icon=True).to_png(os.path.join(folder, "ic_launcher_round.png"))
+        icon(size, variant, design=design).to_png(os.path.join(folder, "ic_launcher.png"))
+        icon(size, variant, round_icon=True, design=design).to_png(
+            os.path.join(folder, "ic_launcher_round.png"))
     draw = os.path.join(res_dir, "drawable")
     os.makedirs(draw, exist_ok=True)
     with open(os.path.join(draw, "ic_launcher_background.xml"), "w", encoding="utf-8") as fh:
         fh.write(vector_background(variant))
     with open(os.path.join(draw, "ic_launcher_foreground.xml"), "w", encoding="utf-8") as fh:
         fh.write(vector_foreground(variant))
-    print(">>> ikony zapisane w %s (wariant %d)" % (res_dir, variant))
+    print(">>> ikony zapisane w %s (projekt %s, wariant %d)" % (res_dir, design, variant))
 
 
 def make_preview(path: str) -> None:
-    """Arkusz: warianty, wariant okrągły i rozmiary launcher'a."""
+    """Arkusz: sześć koncepcji znaku + warianty kolorystyczne i rozmiary."""
     from PIL import Image, ImageDraw, ImageFont  # tylko podgląd (dev)
 
-    cell, pad, cols = 230, 22, 4
+    cell, pad = 200, 20
+    cols = 6
     rows = 2
-    sheet = Image.new("RGB", (pad + cols * (cell + pad), 44 + rows * (cell + pad + 28)),
+    head = 74
+    sheet = Image.new("RGB", (pad + cols * (cell + pad), head + rows * (cell + pad + 26)),
                       (238, 241, 244))
     d = ImageDraw.Draw(sheet)
-    f = ImageFont.truetype("/usr/share/fonts/liberation-sans/LibertationSans-Bold.ttf"
-                           if os.path.exists("/usr/share/fonts/liberation-sans/LibertationSans-Bold.ttf")
-                           else "/usr/share/fonts/liberation-sans/LiberationSans-Bold.ttf", 15)
-    t = ImageFont.truetype("/usr/share/fonts/liberation-sans/LiberationSans-Bold.ttf", 22)
-    d.text((pad, 8), "B-Klasa Hero — nowe logo (warianty i rozmiary)", font=t, fill=(28, 36, 44))
+    fpath = "/usr/share/fonts/liberation-sans/LiberationSans-Bold.ttf"
+    f = ImageFont.truetype(fpath, 14)
+    t = ImageFont.truetype(fpath, 21)
+    d.text((pad, 10), "B-Klasa Hero — propozycje logo (każda to inny znak)", font=t, fill=(28, 36, 44))
+    d.text((pad, 40), "Wariant kolorystyczny i rozmiar wybiera się niezależnie od znaku "
+                      "(--design / --variant).", font=f, fill=(96, 110, 122))
 
-    def png(size, variant, rnd=False, adaptive=False):
+    def png(size, variant=1, rnd=False, design="laurel"):
         tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
         tmp.close()
-        icon(size, variant, round_icon=rnd, adaptive=adaptive).to_png(tmp.name)
+        icon(size, variant, round_icon=rnd, design=design).to_png(tmp.name)
         im = Image.open(tmp.name).convert("RGBA")
         os.unlink(tmp.name)
         return im
 
-    grid = [
-        [("wariant 1 (domyślny)", png(256, 1)), ("wariant 2 — wieczór", png(256, 2)),
-         ("wariant 3 — kontrast", png(256, 3)), ("okrągła", png(256, 1, True))],
-        [("192 px (xxxhdpi)", png(192, 1)), ("96 px (xhdpi)", png(96, 1)),
-         ("48 px (mdpi)", png(48, 1)), ("48 px okrągła", png(48, 1, True))],
-    ]
-    for row_i, row in enumerate(grid):
-        for col_i, (label, im) in enumerate(row):
-            x = pad + col_i * (cell + pad)
-            y = 44 + row_i * (cell + pad + 28)
-            thumb = im.resize((cell, cell), Image.LANCZOS)
-            bg = Image.new("RGB", (cell, cell), (255, 255, 255))
-            bg.paste(thumb, (0, 0), thumb)
-            sheet.paste(bg, (x, y))
-            d.rectangle([x, y, x + cell, y + cell], outline=(203, 211, 219))
-            d.text((x + cell // 2, y + cell + 6), label, font=f, fill=(70, 84, 96), anchor="ma")
+    opisy = {
+        "laurel": "1. Laur + piłka (obecny)",
+        "shield": "2. Tarcza herbowa",
+        "pennant": "3. Proporzec",
+        "net": "4. Piłka w siatce",
+        "roundel": "5. Okrągła odznaka",
+        "shot": "6. Piłka w locie",
+    }
+
+    def put(col, row, im, label):
+        x = pad + col * (cell + pad)
+        y = head + row * (cell + pad + 26)
+        thumb = im.resize((cell, cell), Image.LANCZOS)
+        bg = Image.new("RGB", (cell, cell), (255, 255, 255))
+        bg.paste(thumb, (0, 0), thumb)
+        sheet.paste(bg, (x, y))
+        d.rectangle([x, y, x + cell, y + cell], outline=(203, 211, 219))
+        d.text((x + cell // 2, y + cell + 5), label, font=f, fill=(70, 84, 96), anchor="ma")
+
+    for i, design in enumerate(DESIGNS):
+        put(i, 0, png(256, 1, design=design), opisy[design])
+
+    put(0, 1, png(192, 1), "192 px (xxxhdpi)")
+    put(1, 1, png(96, 1), "96 px (xhdpi)")
+    put(2, 1, png(48, 1), "48 px (mdpi)")
+    put(3, 1, png(256, 1, True), "okrągła")
+    put(4, 1, png(256, 2), "wariant 2 — wieczór")
+    put(5, 1, png(256, 3), "wariant 3 — kontrast")
     sheet.save(path)
     print(">>> arkusz zapisany:", path)
 
@@ -438,17 +575,18 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--out", default=os.path.join(here, "android", "app", "src", "main", "res"))
     ap.add_argument("--variant", type=int, default=1, choices=sorted(VARIANTS))
+    ap.add_argument("--design", default="laurel", choices=DESIGNS)
     ap.add_argument("--site", help="zapisz ikonę 192×192 pod tą ścieżką")
     ap.add_argument("--preview", help="zapisz arkusz porównawczy pod tą ścieżką")
     args = ap.parse_args()
 
     if args.site:
-        icon(192, args.variant).to_png(args.site)
+        icon(192, args.variant, design=args.design).to_png(args.site)
         print(">>> ikona na stronę:", args.site)
     if args.preview:
         make_preview(args.preview)
     if not args.site and not args.preview:
-        generate_res(args.out, args.variant)
+        generate_res(args.out, args.variant, args.design)
 
 
 if __name__ == "__main__":
