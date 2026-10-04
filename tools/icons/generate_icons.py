@@ -28,7 +28,8 @@ import tempfile
 import zlib
 
 DESIGN = 100.0  # przestrzeń projektu: 100×100 jednostek
-DESIGNS = ("laurel", "shield", "pennant", "net", "roundel", "shot", "pin", "map")
+DESIGNS = ("stamp", "seal", "paper", "laurel", "pin", "shield",
+           "pennant", "net", "roundel", "shot", "map")
 
 VARIANTS = {
     1: dict(  # głęboka zieleń + złoty laur (domyślny)
@@ -63,6 +64,95 @@ LEAF_WID = 5.4
 LEAF_COUNT = 6
 LEAF_ANGLE_FROM = 36.0
 LEAF_ANGLE_TO = 148.0
+
+
+
+# --- Blokowa czcionka stemplowa (5×7, bez fontów systemowych) ---------------
+GLYPHS = {
+    "B": ["11110", "10001", "10001", "11110", "10001", "10001", "11110"],
+    "K": ["10001", "10010", "10100", "11000", "10100", "10010", "10001"],
+    "L": ["10000", "10000", "10000", "10000", "10000", "10000", "11111"],
+    "A": ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+    "S": ["01111", "10000", "10000", "01110", "00001", "00001", "11110"],
+    "H": ["10001", "10001", "10001", "11111", "10001", "10001", "10001"],
+    "E": ["11111", "10000", "10000", "11110", "10000", "10000", "11111"],
+    "R": ["11110", "10001", "10001", "11110", "10100", "10010", "10001"],
+    "O": ["01110", "10001", "10001", "10001", "10001", "10001", "01110"],
+    "T": ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+    "Z": ["11111", "00010", "00100", "01000", "10000", "10000", "11111"],
+    "W": ["10001", "10001", "10001", "10101", "10101", "11011", "10001"],
+    "D": ["11110", "10001", "10001", "10001", "10001", "10001", "11110"],
+    "N": ["10001", "11001", "10101", "10011", "10001", "10001", "10001"],
+    "I": ["11111", "00100", "00100", "00100", "00100", "00100", "11111"],
+    "0": ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
+    "1": ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+    "2": ["01110", "10001", "00001", "00110", "01000", "10000", "11111"],
+    "3": ["11110", "00001", "00001", "01110", "00001", "00001", "11110"],
+    "4": ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
+    "5": ["11111", "10000", "11110", "00001", "00001", "10001", "01110"],
+    "6": ["00110", "01000", "10000", "11110", "10001", "10001", "01110"],
+    "7": ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+    "8": ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
+    "9": ["01110", "10001", "10001", "01111", "00001", "00010", "01100"],
+    "-": ["00000", "00000", "00000", "11111", "00000", "00000", "00000"],
+    " ": ["00000"] * 7,
+}
+
+
+def text_width(text: str, cell: float, tracking: float = 1.0) -> float:
+    return len(text) * 5 * cell + max(0, len(text) - 1) * tracking * cell
+
+
+def draw_text(r: "Raster", text: str, x: float, y: float, cell: float, color,
+              tracking: float = 1.0) -> None:
+    """Tekst blokowy: każda komórka 5×7 to mały prostokąt (styl pieczątki)."""
+    for ch in text.upper():
+        glyph = GLYPHS.get(ch, GLYPHS[" "])
+        for row, line in enumerate(glyph):
+            for col, bit in enumerate(line):
+                if bit == "1":
+                    r.rect(x + col * cell, y + row * cell,
+                           x + (col + 1) * cell, y + (row + 1) * cell, color)
+        x += 5 * cell + tracking * cell
+
+
+def _ink_speckles(r: "Raster", color, seed: int = 7, count: int = 90, alpha=0.55) -> None:
+    """Nierówny nadruk: drobinki tuszu rozsypane po pieczątce."""
+    state = seed
+    for _ in range(count):
+        state = (state * 1103515245 + 12345) & 0x7FFFFFFF
+        x = 8 + (state % 840) / 10.0
+        state = (state * 1103515245 + 12345) & 0x7FFFFFFF
+        y = 8 + (state % 840) / 10.0
+        state = (state * 1103515245 + 12345) & 0x7FFFFFFF
+        rad = 0.4 + (state % 12) / 20.0
+        r.circle(x, y, rad, color)
+
+
+def _rough_frame(r: "Raster", x0, y0, x1, y1, width, color, seed: int = 3) -> None:
+    """Prostokątna ramka stempla: kreski z drżeniem i przerwami (jak guma)."""
+    state = seed
+    def jitter(scale=1.2):
+        nonlocal state
+        state = (state * 1103515245 + 12345) & 0x7FFFFFFF
+        return ((state % 1000) / 1000.0 - 0.5) * scale
+    steps = 26
+    for i in range(steps):
+        t0, t1 = i / steps, (i + 0.82) / steps
+        if i % 7 == 0:      # przerwa w nadruku
+            continue
+        # góra i dół
+        for y in (y0, y1):
+            xa = x0 + (x1 - x0) * t0
+            xb = x0 + (x1 - x0) * t1
+            yy = y + jitter()
+            r.rect(xa, yy - width / 2, xb, yy + width / 2, color)
+        # boki
+        for x in (x0, x1):
+            ya = y0 + (y1 - y0) * t0
+            yb = y0 + (y1 - y0) * t1
+            xx = x + jitter()
+            r.rect(xx - width / 2, ya, xx + width / 2, yb, color)
 
 
 class Raster:
@@ -290,7 +380,7 @@ def draw_ball(r: Raster, cx: float, cy: float, radius: float, v: dict) -> None:
         r.polygon(patch, v["patch"])
 
 
-def draw_design(r: Raster, v: dict, design: str) -> None:
+def draw_design(r: Raster, v: dict, design: str, variant_key: int = 1) -> None:
     """Znak aplikacji. `design` wybiera koncepcję (kształt), `v` kolory."""
     r.gradient(v["bg_top"], v["bg_bottom"])
     r.radial(BALL_CX, BALL_CY, 62.0, v["glow"], 0.35)
@@ -387,6 +477,71 @@ def draw_design(r: Raster, v: dict, design: str) -> None:
         r.circle(px, py, prad - 2.6, paper)
         draw_ball(r, 24, 68, 9.5, v)
 
+    elif design in ("stamp", "seal", "paper"):
+        # --- retro-prasa: pieczątka z gazetki okręgowej -----------------------
+        PAPER = (0xF3, 0xED, 0xE0)
+        PAPER_DARK = (0xE3, 0xDA, 0xC7)
+        INK = (0x2B, 0x2B, 0x30)
+        MUD = (0x6E, 0x50, 0x2F)
+        STAMP_INKS = {1: (0xB4, 0x3A, 0x2E), 2: (0x4A, 0x3A, 0x7A), 3: (0x33, 0x33, 0x38)}
+        ink = STAMP_INKS[variant_key]
+
+        # papier z delikatnym cieniem u dołu
+        r.gradient(PAPER, PAPER_DARK)
+        r.radial(50, 40, 70, (0xFF, 0xFF, 0xFF), 0.25)
+
+        if design == "stamp":
+            # krzywo odbita pieczątka prostokątna: ramka + B-KLASA + piłka w błocie
+            st = Raster(r.size)
+            _rough_frame(st, 13, 24, 87, 76, 3.2, ink, seed=11)
+            draw_text(st, "B-KLASA", 19.5, 30.5, 1.75, ink)
+            st.rect(20, 43, 80, 44.4, ink)
+            draw_ball(st, 50, 57, 10.5, dict(ball=(0xF9, 0xF4, 0xE8), patch=MUD))
+            st.ring(50, 57, 10.5, 1.3, ink)
+            for dx in (-1, 1):
+                st.circle(50 + dx * 27, 57, 2.6, ink)
+            _ink_speckles(st, ink, seed=5, count=26, alpha=0.40)
+            _composite_rotated(r, st, -6.5, 1.0, 0.92)
+
+        elif design == "seal":
+            # okrągła pieczątka: postrzępiony pierścień, piłka i HERO
+            st = Raster(r.size)
+            steps = 30
+            for i in range(steps):
+                if i % 9 == 4:
+                    continue
+                ang = 2 * math.pi * i / steps
+                x = 50 + 33 * math.cos(ang)
+                y = 50 + 33 * math.sin(ang)
+                st.ellipse_rot(x, y, 4.6, 1.9, math.degrees(ang) + 90, ink)
+            for i in range(steps):
+                ang = 2 * math.pi * i / steps + 0.1
+                x = 50 + 27.5 * math.cos(ang)
+                y = 50 + 27.5 * math.sin(ang)
+                st.ellipse_rot(x, y, 2.4, 1.1, math.degrees(ang) + 90, ink)
+            draw_ball(st, 50, 43, 14.0, dict(ball=(0xF9, 0xF4, 0xE8), patch=MUD))
+            st.ring(50, 43, 14.0, 1.4, ink)
+            draw_text(st, "HERO", 38.3, 60, 1.5, ink)
+            for dx in (-1, 1):
+                st.circle(50 + dx * 20, 48, 2.2, ink)
+            _ink_speckles(st, ink, seed=17, count=30, alpha=0.40)
+            _composite_rotated(r, st, 5.0, 1.0, 0.9)
+
+        else:  # paper — gazetka
+            # nagłówek jak w gazetce: czarny pasek, B-KLASA, piłka i czerwona pieczątka
+            r.rect(11, 17, 89, 30, INK)
+            draw_text(r, "B-KLASA", 15.5, 20.5, 1.75, PAPER)
+            draw_ball(r, 50, 60, 17.0, dict(ball=(0xF9, 0xF4, 0xE8), patch=MUD))
+            r.ring(50, 60, 17.0, 1.6, INK)
+            # błoto pod piłką
+            for dx, dy, rad in ((-14, 12, 4.2), (10, 13, 3.4), (-3, 15, 5.0), (20, 9, 2.6)):
+                r.circle(50 + dx, 60 + dy, rad, MUD)
+            # czerwona pieczątka w rogu
+            st = Raster(r.size)
+            _rough_frame(st, 54, 70, 90, 86, 2.4, ink, seed=23)
+            draw_text(st, "HERO", 57.5, 73.5, 1.4, ink)
+            _composite_rotated(r, st, -9.0, 1.0, 0.85)
+
     else:
         raise SystemExit("nieznany projekt: %s" % design)
 
@@ -399,11 +554,11 @@ def icon(size: int, variant: int = 1, round_icon: bool = False, adaptive: bool =
         r.gradient(v["bg_top"], v["bg_bottom"])
         r.radial(BALL_CX, BALL_CY, 62.0, v["glow"], 0.35)
         mark = Raster(size)
-        draw_design(mark, v, design)
+        draw_design(mark, v, design, variant)
         # znak bez tła: zostawiamy tylko piksele różniące się od gradientu
         _composite_mark(r, mark, 0.62)
     else:
-        draw_design(r, v, design)
+        draw_design(r, v, design, variant)
         r.mask_circle() if round_icon else r.mask_round_rect()
     return r
 
@@ -425,6 +580,28 @@ def _composite_mark(dst: Raster, src: Raster, scale: float) -> None:
                 continue
             # piksele tła mają kolor z tego samego gradientu — pomijamy je
             dst._put(x, y, (src.px[i], src.px[i + 1], src.px[i + 2]), 1.0)
+
+
+def _composite_rotated(dst: Raster, src: Raster, deg: float, scale: float = 1.0,
+                       opacity: float = 1.0) -> None:
+    """Wkleja warstwę obróconą o `deg` wokół środka (krzywo odbita pieczątka)."""
+    rad = math.radians(deg)
+    ca, sa = math.cos(rad), math.sin(rad)
+    dsz, ssz = dst.w, src.w
+    half, off = ssz / 2.0, dsz / 2.0
+    for y in range(dsz):
+        dy = (y - off) / scale
+        for x in range(dsz):
+            dx = (x - off) / scale
+            u = dx * ca + dy * sa + half
+            v = -dx * sa + dy * ca + half
+            sx, sy = int(u), int(v)
+            if 0 <= sx < ssz and 0 <= sy < ssz:
+                i = (sy * ssz + sx) * 4
+                a = src.px[i + 3]
+                if a:
+                    dst._put(x, y, (src.px[i], src.px[i + 1], src.px[i + 2]),
+                             a / 255.0 * opacity)
 
 
 def _composite_scaled(dst: Raster, src: Raster, scale: float) -> None:
@@ -579,6 +756,9 @@ def make_preview(path: str) -> None:
         return im
 
     opisy = {
+        "stamp": "A. Pieczątka B-KLASA",
+        "seal": "B. Okrągła pieczątka",
+        "paper": "C. Gazetka okręgowa",
         "laurel": "1. Laur + piłka (obecny)",
         "shield": "2. Tarcza herbowa",
         "pennant": "3. Proporzec",
@@ -602,8 +782,15 @@ def make_preview(path: str) -> None:
     for i, design in enumerate(DESIGNS[:6]):
         put(i, 0, png(256, 1, design=design), opisy[design])
 
+    put(0, 1, png(256, 1, design="stamp", ), "A. Pieczątka B-KLASA")
+    put(1, 1, png(256, 2, design="stamp"), "A. wariant 2 — fiolet")
+    put(2, 1, png(256, 1, design="seal"), "B. Okrągła pieczątka")
+    put(3, 1, png(256, 1, design="paper"), "C. Gazetka okręgowa")
+    put(4, 1, png(256, 3, design="stamp"), "A. wariant 3 — czarny tusz")
+    put(5, 1, png(256, 2, design="paper"), "C. wariant 2 — fiolet")
+
     # trzeci rząd: realny rozmiar launcher'a (48 px) — tak widać znak na telefonie
-    for i, design in enumerate(DESIGNS):
+    for i, design in enumerate(DESIGNS[:6]):
         small = png(48, 1, design=design)
         put(i, 2, small, "48 px — %s" % opisy[design].split(". ", 1)[1])
         # podgląd 1:1 (48 px) na środku komórki, żeby nie oceniać skalowania
@@ -611,12 +798,6 @@ def make_preview(path: str) -> None:
         y = head + 2 * (cell + pad + 26) + cell // 2 - small.height // 2
         sheet.paste(small.convert("RGB"), (x, y))
 
-    put(0, 1, png(256, 1, design="pin"), opisy["pin"])
-    put(1, 1, png(256, 1, design="map"), opisy["map"])
-    put(2, 1, png(192, 1), "192 px (xxxhdpi)")
-    put(3, 1, png(48, 1), "48 px (mdpi)")
-    put(4, 1, png(256, 1, True), "okrągła")
-    put(5, 1, png(256, 2), "wariant 2 — wieczór")
     sheet.save(path)
     print(">>> arkusz zapisany:", path)
 
