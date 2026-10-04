@@ -28,7 +28,7 @@ import tempfile
 import zlib
 
 DESIGN = 100.0  # przestrzeń projektu: 100×100 jednostek
-DESIGNS = ("laurel", "shield", "pennant", "net", "roundel", "shot")
+DESIGNS = ("laurel", "shield", "pennant", "net", "roundel", "shot", "pin", "map")
 
 VARIANTS = {
     1: dict(  # głęboka zieleń + złoty laur (domyślny)
@@ -347,6 +347,46 @@ def draw_design(r: Raster, v: dict, design: str) -> None:
             r.polygon([(base, y - 5.4), (tip, y), (base, y + 5.4)], gold)
         draw_ball(r, 62, 48, 21.0, v)
 
+    elif design == "pin":
+        # wskaznik mapy z piłką w środku
+        cx, cy, rad = 50.0, 39.0, 18.5
+        r.polygon([(cx - rad * 0.70, cy + rad * 0.70), (cx, cy + rad * 2.15),
+                   (cx + rad * 0.70, cy + rad * 0.70)], gold)
+        r.circle(cx, cy, rad, gold)
+        r.polygon([(cx - rad * 0.60, cy + rad * 0.74), (cx, cy + rad * 1.92),
+                   (cx + rad * 0.60, cy + rad * 0.74)], v["bg_bottom"])
+        r.circle(cx, cy, rad - 3.6, v["bg_bottom"])
+        draw_ball(r, cx, cy, rad - 6.4, v)
+        # kropki trasy dochodzące do wskaznika
+        for i in range(4):
+            r.circle(16 + i * 7.5, 76 - i * 3.0, 2.3 - i * 0.15, gold)
+
+    elif design == "map":
+        # mapa z trasą: piłka u nas, wskaznik u rywala
+        paper = (0xEC, 0xF2, 0xE9)
+        grid = (0xC3, 0xD3, 0xC6)
+        shade = (0xD3, 0xDF, 0xD6)
+        r.rect(12, 26, 88, 78, paper)
+        for i in range(1, 7):
+            x = 12 + i * (76.0 / 7)
+            r.rect(x - 0.4, 26, x + 0.4, 78, grid)
+        for i in range(1, 5):
+            y = 26 + i * (52.0 / 5)
+            r.rect(12, y - 0.4, 88, y + 0.4, grid)
+        # zgięcie mapy
+        r.polygon([(50, 26), (56, 26), (50, 78), (44, 78)], shade)
+        # trasa
+        trasa = [(24, 68), (33, 63), (40, 55), (49, 49), (58, 44), (66, 41)]
+        for i, (x, y) in enumerate(trasa):
+            r.circle(x, y, 2.5 if i % 2 == 0 else 1.8, gold)
+        # pin rywala i piłka u nas
+        px, py, prad = 70.0, 38.0, 7.5
+        r.polygon([(px - prad * 0.70, py + prad * 0.70), (px, py + prad * 2.1),
+                   (px + prad * 0.70, py + prad * 0.70)], v["laurel"])
+        r.circle(px, py, prad, v["laurel"])
+        r.circle(px, py, prad - 2.6, paper)
+        draw_ball(r, 24, 68, 9.5, v)
+
     else:
         raise SystemExit("nieznany projekt: %s" % design)
 
@@ -518,7 +558,7 @@ def make_preview(path: str) -> None:
 
     cell, pad = 200, 20
     cols = 6
-    rows = 2
+    rows = 3
     head = 74
     sheet = Image.new("RGB", (pad + cols * (cell + pad), head + rows * (cell + pad + 26)),
                       (238, 241, 244))
@@ -545,6 +585,8 @@ def make_preview(path: str) -> None:
         "net": "4. Piłka w siatce",
         "roundel": "5. Okrągła odznaka",
         "shot": "6. Piłka w locie",
+        "pin": "7. Wskaźnik z piłką",
+        "map": "8. Mapa z trasą",
     }
 
     def put(col, row, im, label):
@@ -557,15 +599,24 @@ def make_preview(path: str) -> None:
         d.rectangle([x, y, x + cell, y + cell], outline=(203, 211, 219))
         d.text((x + cell // 2, y + cell + 5), label, font=f, fill=(70, 84, 96), anchor="ma")
 
-    for i, design in enumerate(DESIGNS):
+    for i, design in enumerate(DESIGNS[:6]):
         put(i, 0, png(256, 1, design=design), opisy[design])
 
-    put(0, 1, png(192, 1), "192 px (xxxhdpi)")
-    put(1, 1, png(96, 1), "96 px (xhdpi)")
-    put(2, 1, png(48, 1), "48 px (mdpi)")
-    put(3, 1, png(256, 1, True), "okrągła")
-    put(4, 1, png(256, 2), "wariant 2 — wieczór")
-    put(5, 1, png(256, 3), "wariant 3 — kontrast")
+    # trzeci rząd: realny rozmiar launcher'a (48 px) — tak widać znak na telefonie
+    for i, design in enumerate(DESIGNS):
+        small = png(48, 1, design=design)
+        put(i, 2, small, "48 px — %s" % opisy[design].split(". ", 1)[1])
+        # podgląd 1:1 (48 px) na środku komórki, żeby nie oceniać skalowania
+        x = pad + i * (cell + pad) + cell // 2 - small.width // 2
+        y = head + 2 * (cell + pad + 26) + cell // 2 - small.height // 2
+        sheet.paste(small.convert("RGB"), (x, y))
+
+    put(0, 1, png(256, 1, design="pin"), opisy["pin"])
+    put(1, 1, png(256, 1, design="map"), opisy["map"])
+    put(2, 1, png(192, 1), "192 px (xxxhdpi)")
+    put(3, 1, png(48, 1), "48 px (mdpi)")
+    put(4, 1, png(256, 1, True), "okrągła")
+    put(5, 1, png(256, 2), "wariant 2 — wieczór")
     sheet.save(path)
     print(">>> arkusz zapisany:", path)
 
