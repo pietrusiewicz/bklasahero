@@ -28,6 +28,7 @@ import tempfile
 import zlib
 
 DESIGN = 100.0  # przestrzeń projektu: 100×100 jednostek
+STEMPLE = ("stamp", "seal", "paper")
 DESIGNS = ("stamp", "seal", "paper", "laurel", "pin", "shield",
            "pennant", "net", "roundel", "shot", "map")
 
@@ -380,10 +381,12 @@ def draw_ball(r: Raster, cx: float, cy: float, radius: float, v: dict) -> None:
         r.polygon(patch, v["patch"])
 
 
-def draw_design(r: Raster, v: dict, design: str, variant_key: int = 1) -> None:
-    """Znak aplikacji. `design` wybiera koncepcję (kształt), `v` kolory."""
-    r.gradient(v["bg_top"], v["bg_bottom"])
-    r.radial(BALL_CX, BALL_CY, 62.0, v["glow"], 0.35)
+def draw_design(r: Raster, v: dict, design: str, variant_key: int = 1,
+                mark_only: bool = False) -> None:
+    """Znak aplikacji. `mark_only=True` pomija tło (dla ikony adaptacyjnej)."""
+    if not mark_only:
+        r.gradient(v["bg_top"], v["bg_bottom"])
+        r.radial(BALL_CX, BALL_CY, 62.0, v["glow"], 0.35)
     gold, cream, patch = v["laurel"], v["ball"], v["patch"]
 
     if design == "laurel":
@@ -486,9 +489,10 @@ def draw_design(r: Raster, v: dict, design: str, variant_key: int = 1) -> None:
         STAMP_INKS = {1: (0xB4, 0x3A, 0x2E), 2: (0x4A, 0x3A, 0x7A), 3: (0x33, 0x33, 0x38)}
         ink = STAMP_INKS[variant_key]
 
-        # papier z delikatnym cieniem u dołu
-        r.gradient(PAPER, PAPER_DARK)
-        r.radial(50, 40, 70, (0xFF, 0xFF, 0xFF), 0.25)
+        # papier z delikatnym cieniem u dołu (pomijany dla ikony adaptacyjnej)
+        if not mark_only:
+            r.gradient(PAPER, PAPER_DARK)
+            r.radial(50, 40, 70, (0xFF, 0xFF, 0xFF), 0.25)
 
         if design == "stamp":
             # krzywo odbita pieczątka prostokątna: ramka + B-KLASA + piłka w błocie
@@ -551,12 +555,10 @@ def icon(size: int, variant: int = 1, round_icon: bool = False, adaptive: bool =
     v = VARIANTS[variant]
     r = Raster(size)
     if adaptive:
-        r.gradient(v["bg_top"], v["bg_bottom"])
-        r.radial(BALL_CX, BALL_CY, 62.0, v["glow"], 0.35)
+        # foreground: sam znak na przezroczystym tle, w strefie bezpiecznej 66/108
         mark = Raster(size)
-        draw_design(mark, v, design, variant)
-        # znak bez tła: zostawiamy tylko piksele różniące się od gradientu
-        _composite_mark(r, mark, 0.62)
+        draw_design(mark, v, design, variant, mark_only=True)
+        _composite_scaled(r, mark, 0.68)
     else:
         draw_design(r, v, design, variant)
         r.mask_circle() if round_icon else r.mask_round_rect()
@@ -625,12 +627,17 @@ def _fmt(v: float) -> str:
     return ("%.2f" % v).rstrip("0").rstrip(".")
 
 
-def vector_background(variant: int = 1) -> str:
+def vector_background(variant: int = 1, paper: bool = False) -> str:
     v = VARIANTS[variant]
-    top = "#%02X%02X%02X" % v["bg_top"]
-    bottom = "#%02X%02X%02X" % v["bg_bottom"]
+    if paper:
+        top, bottom = "#F5F0E6", "#E3DAC7"
+    else:
+        top = "#%02X%02X%02X" % v["bg_top"]
+        bottom = "#%02X%02X%02X" % v["bg_bottom"]
+    tytul = ("Tło adaptacyjnej ikony: papier gazetki." if paper
+             else "Tło adaptacyjnej ikony: głęboka zieleń w pionowym gradiencie.")
     return f"""<?xml version="1.0" encoding="utf-8"?>
-<!-- Tło adaptacyjnej ikony: głęboka zieleń w pionowym gradiencie. -->
+<!-- {tytul} -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -720,12 +727,31 @@ def generate_res(res_dir: str, variant: int = 1, design: str = "laurel") -> None
         icon(size, variant, design=design).to_png(os.path.join(folder, "ic_launcher.png"))
         icon(size, variant, round_icon=True, design=design).to_png(
             os.path.join(folder, "ic_launcher_round.png"))
+    # warstwa adaptacyjna: znak jako bitmapa w strefie bezpiecznej (znaki
+    # teksturowe — pieczątki — nie dają się sensownie zapisać ścieżkami)
+    for density, size in DENSITIES.items():
+        folder = os.path.join(res_dir, "mipmap-%s" % density)
+        icon(size, variant, adaptive=True, design=design).to_png(
+            os.path.join(folder, "ic_launcher_foreground.png"))
     draw = os.path.join(res_dir, "drawable")
     os.makedirs(draw, exist_ok=True)
     with open(os.path.join(draw, "ic_launcher_background.xml"), "w", encoding="utf-8") as fh:
-        fh.write(vector_background(variant))
-    with open(os.path.join(draw, "ic_launcher_foreground.xml"), "w", encoding="utf-8") as fh:
-        fh.write(vector_foreground(variant))
+        fh.write(vector_background(variant, paper=design in STEMPLE))
+    mipmap_xml = os.path.join(res_dir, "mipmap-anydpi-v26")
+    os.makedirs(mipmap_xml, exist_ok=True)
+    adaptive = ("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                "<!-- Ikona adaptacyjna: tło z warstwy drawable, znak jako bitmapa. -->\n"
+                "<adaptive-icon xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                "    <background android:drawable=\"@drawable/ic_launcher_background\" />\n"
+                "    <foreground android:drawable=\"@mipmap/ic_launcher_foreground\" />\n"
+                "</adaptive-icon>\n")
+    for name in ("ic_launcher.xml", "ic_launcher_round.xml"):
+        with open(os.path.join(mipmap_xml, name), "w", encoding="utf-8") as fh:
+            fh.write(adaptive)
+    # wektorowy foreground był tylko dla znaku z laurem — nie jest już używany
+    stary = os.path.join(draw, "ic_launcher_foreground.xml")
+    if os.path.exists(stary):
+        os.unlink(stary)
     print(">>> ikony zapisane w %s (projekt %s, wariant %d)" % (res_dir, design, variant))
 
 

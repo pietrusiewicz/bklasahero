@@ -4,6 +4,21 @@ Wszystkie istotne zmiany projektu są tu rejestrowane. Format inspirowany
 [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie zgodne
 z [SemVer](https://semver.org/lang/pl/).
 
+## [0.1.3] — 2026-10-04
+
+### Zmienione
+
+- **Nowe logo: pieczątka „B-KLASA"** — krzywo odbita pieczątka z gazetki okręgowej:
+  postrzępiona ramka z przerwami w tuszu, blokowy napis, piłka w błocie i drobinki
+  tuszu na papierze. Zastępuje zielony kwadrat z białą piłką. Znak rysuje
+  `tools/icons/generate_icons.py` — doszła blokowa czcionka 5×7 (bez fontów
+  systemowych), postrzępiona ramka i obrót warstwy (krzywe odbicie).
+- **Ikona adaptacyjna** używa teraz **bitmapy** w strefie bezpiecznej zamiast wektora:
+  znak jest teksturowy, więc nie da się go sensownie zapisać ścieżkami. Tło adaptacyjne
+  to papier gazetki.
+- Podglądy: [`docs/logo-preview.png`](logo-preview.png) (propozycje i warianty tuszu),
+  [`docs/adaptive-preview.png`](adaptive-preview.png) (jak widzi to launcher).
+
 ## [0.1.2] — 2026-10-04
 
 ### Naprawione

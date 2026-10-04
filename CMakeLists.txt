@@ -9,7 +9,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(bkh
-        VERSION 0.1.2
+        VERSION 0.1.3
         DESCRIPTION "B-Klasa Hero — deterministic penalty-shootout and league core"
         LANGUAGES CXX)
 
