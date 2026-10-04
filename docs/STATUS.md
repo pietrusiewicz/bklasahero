@@ -18,7 +18,7 @@
 
 ## Wersja
 
-- Rdzeń: **0.1.1** (`project(bkh VERSION ...)` w korzeniu `CMakeLists.txt`)
+- Rdzeń: **0.1.2** (`project(bkh VERSION ...)` w korzeniu `CMakeLists.txt`)
 - Protokół JSON: **1** (`kProtocolVersion` w `core/include/bkh/facade.h`)
 - Schema save'a: **1** (`CareerState::schemaVersion`)
 

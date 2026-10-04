@@ -4,6 +4,28 @@ Wszystkie istotne zmiany projektu są tu rejestrowane. Format inspirowany
 [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie zgodne
 z [SemVer](https://semver.org/lang/pl/).
 
+## [0.1.2] — 2026-10-04
+
+### Naprawione
+
+- **„Rozpocznij rzuty karne" wywalało aplikację do menu.** Rdzeń wysyła `setup`
+  (a w `kick` — `resolution`) jako **string z JSON-em w środku**, a UI czytał je
+  jak obiekty. `.jsonObject` na stringu rzuca wyjątek, a ten w `viewModelScope`
+  kończy proces — gracz widział powrót do menu bez żadnego komunikatu.
+  Parsowanie idzie teraz przez `nestedJson` (tak jak `resolution` w strzale),
+  a każda aktualizacja stanu z odpowiedzi rdzenia jest opakowana w `runCatching`:
+  błąd pokazuje komunikat „Nie udało się odczytać stanu meczu", a nie zabija gry.
+  Regresji pilnuje `MatchParsingTest` na prawdziwych payloadach z rdzenia.
+- **Nakładka wyniku rzutu („GOL!", „WSPANIAŁA OBRONA!") się nie pokazywała** —
+  `resolution` jest zagnieżdżony o poziom głębiej (w polu `kick`), więc wynik był
+  zawsze `null`.
+
+### Zmienione
+
+- **`release.yml`**: `versionCode` pochodzi z repo (`android/app/build.gradle.kts`),
+  a nie z `github.run_number` — wydanie z GitHuba, strona i F-Droid mają ten sam
+  numer wersji, więc aktualizacja między kanałami nie jest odrzucana.
+
 ## [Niewydane]
 
 ### Zmienione

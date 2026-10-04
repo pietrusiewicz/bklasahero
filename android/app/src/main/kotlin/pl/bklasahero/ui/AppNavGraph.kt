@@ -115,5 +115,6 @@ private fun toastMessage(raw: String?): String? = when (raw) {
     null -> null
     "saved" -> stringResource(R.string.toast_saved)
     "places.load_failed" -> stringResource(R.string.toast_places_failed)
+    "match.parse_failed" -> stringResource(R.string.toast_match_failed)
     else -> stringResource(R.string.toast_error, raw)
 }

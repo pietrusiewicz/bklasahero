@@ -35,6 +35,19 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState
 
+    /**
+     * Bezpieczna aktualizacja stanu: gdy parsowanie odpowiedzi rdzenia zawiedzie,
+     * pokazujemy komunikat zamiast wywalać aplikację (wyjątek w `viewModelScope`
+     * kończy proces — użytkownik „wraca do menu" bez śladu przyczyny).
+     */
+    private fun MutableStateFlow<AppUiState>.updateSafely(
+        block: (AppUiState) -> AppUiState,
+    ) {
+        update { state ->
+            runCatching { block(state) }.getOrElse { state.copy(toast = "match.parse_failed") }
+        }
+    }
+
     fun dispatch(intent: AppIntent) {
         _uiState.update { reduce(it, intent, container) }
     }
@@ -99,7 +112,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             NativeBridge.command(buildJsonObject { put("cmd", "beginMatch") })
                 .onSuccess { data ->
-                    _uiState.update { it.applyMatchSetup(data) }
+                    _uiState.updateSafely { it.applyMatchSetup(data) }
                     refreshTurn()
                 }
                 .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
@@ -110,7 +123,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     fun refreshTurn() {
         viewModelScope.launch {
             NativeBridge.command(buildJsonObject { put("cmd", "matchState") })
-                .onSuccess { data -> _uiState.update { it.applyTurn(data) } }
+                .onSuccess { data -> _uiState.updateSafely { it.applyTurn(data) } }
                 .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
         }
     }
@@ -127,7 +140,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
             NativeBridge.command(cmd)
                 .onSuccess { data ->
                     FrameBuffer.pull(FloatArray(0))
-                    _uiState.update { it.applyKickResult(data, "shooter") }
+                    _uiState.updateSafely { it.applyKickResult(data, "shooter") }
                 }
                 .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
         }
@@ -145,7 +158,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
             NativeBridge.command(cmd)
                 .onSuccess { data ->
                     FrameBuffer.pull(FloatArray(0))
-                    _uiState.update { it.applyKickResult(data, "keeper") }
+                    _uiState.updateSafely { it.applyKickResult(data, "keeper") }
                 }
                 .onFailure { e -> _uiState.update { it.copy(toast = e.message) } }
         }
@@ -219,8 +232,11 @@ private fun scoreboardFrom(sb: Scoreboard, so: JsonObject?): Scoreboard {
     )
 }
 
-private fun AppUiState.applyMatchSetup(data: JsonObject): AppUiState {
-    val setup = data["setup"]?.jsonObject
+internal fun AppUiState.applyMatchSetup(data: JsonObject): AppUiState {
+    // UWAGA: rdzeń wysyła `setup` jako STRING z JSON-em w środku (nie obiekt) —
+    // sięgnięcie po `.jsonObject` rzucało wyjątek i wywalało aplikację zaraz po
+    // kliknięciu „Rozpocznij rzuty karne".
+    val setup = nestedJson(data, "setup")
     val home = setup?.let { str(it, "playerClubShort") } ?: ""
     val away = setup?.let { str(it, "opponentShort") } ?: ""
     val kps = setup?.get("rules")?.jsonObject?.get("kicksPerSide")?.jsonPrimitive?.intOrNull ?: 5
@@ -265,10 +281,12 @@ private fun AppUiState.applyTurn(data: JsonObject): AppUiState {
 }
 
 /** Odpowiedź shoot/dive → aktualizacja tablicy + przejście na ekran wyniku. */
-private fun AppUiState.applyKickResult(data: JsonObject, role: String): AppUiState {
+internal fun AppUiState.applyKickResult(data: JsonObject, role: String): AppUiState {
     val so = data["shootout"]?.jsonObject
     val finished = data["finished"]?.jsonPrimitive?.booleanOrNull ?: false
-    val resolution = nestedJson(data, "resolution")
+    // `kick` jest stringiem z JSON-em, a `resolution` — stringiem w środku niego.
+    val kick = nestedJson(data, "kick")
+    val resolution = kick?.let { nestedJson(it, "resolution") }
     val outcomeKey = resolution?.get("outcome")?.jsonPrimitive?.content
     return copy(
         scoreboard = scoreboardFrom(scoreboard, so).copy(finished = finished),
