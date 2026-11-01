@@ -38,6 +38,7 @@ GOAL_LINE_Y = 0.52
 GOAL_LEFT = 0.19
 GOAL_RIGHT = 0.81
 SHOOTER_Y = 0.90
+FRONT_Y = 0.80      # punkt karny (z=0)
 BOARD_H = 63.0     # pasek wyniku (ScoreboardBar)
 
 SKY_TOP = (0x12, 0x33, 0x5C)
@@ -132,11 +133,32 @@ def draw_scene(c: Canvas) -> None:
             [0, px(horizon + (H - horizon) * a), px(W), px(horizon + (H - horizon) * b)],
             fill=color,
         )
-    # linie: pole karne i linia bramkowa
-    c.d.line([px(W * 0.07), px(H * 0.72), px(W * 0.07), px(H)], fill=LINE, width=px(2))
-    c.d.line([px(W * 0.93), px(H * 0.72), px(W * 0.93), px(H)], fill=LINE, width=px(2))
-    c.d.line([px(W * 0.07), px(H * 0.72), px(W * 0.93), px(H * 0.72)], fill=LINE, width=px(2))
-    c.d.line([px(0), px(H * GOAL_LINE_Y), px(W), px(H * GOAL_LINE_Y)], fill=LINE, width=px(2.5))
+    # Linie boiska — trapezy zbiegające do punktu zbiegu, tak jak drawFieldLines()
+    # w MatchRenderer.kt. Wcześniej mockup rysował pole karne jako prostokąt,
+    # przez co zrzuty nie odpowiadały grze.
+    cx = W / 2.0
+    vp_y = H * HORIZON_Y
+    goal_y = H * GOAL_LINE_Y
+
+    def trapez(back_half, back_y, front_half, front_y):
+        c.d.polygon(
+            [(px(cx - back_half), px(back_y)), (px(cx + back_half), px(back_y)),
+             (px(cx + front_half), px(front_y)), (px(cx - front_half), px(front_y))],
+            outline=LINE, width=px(5))
+
+    # linia bramkowa na całej szerokości
+    c.d.line([px(0), px(goal_y), px(W), px(goal_y)], fill=LINE, width=px(3.5))
+
+    # pole bramkowe (5,5 m) i pole karne (16,5 m) — rzut perspektywiczny
+    for back_half, front_y in ((W * 0.40, H * 0.60), (W * 0.46, H * 0.72)):
+        front_half = back_half * (front_y - vp_y) / (goal_y - vp_y)
+        trapez(back_half, goal_y, front_half, front_y)
+
+    # punkt karny i łuk „D"
+    c.circle(cx, H * FRONT_Y, 6.0, LINE)
+    arc_w, arc_h = W * 0.10, H * 0.06
+    c.d.arc([px(cx - arc_w), px(H * FRONT_Y - arc_h), px(cx + arc_w), px(H * FRONT_Y + arc_h)],
+            start=0, end=180, fill=LINE, width=px(3.5))
 
 
 def draw_goal(c: Canvas, with_net: bool = True) -> None:
