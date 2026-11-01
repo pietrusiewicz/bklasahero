@@ -26,6 +26,10 @@ I_SOCCER = "\uf1e3"
 I_MOON = "\uf186"
 I_REFRESH = "\uf01e"
 I_HELP = "\uf059"
+I_TABLE = "\uf0ce"     # table
+I_CAL = "\uf073"       # calendar
+I_TROPHY = "\uf091"    # trophy
+I_BOOK = "\uf02d"      # book
 
 PAGE_BG = (238, 241, 244, 255)
 PAGE_FG = (28, 36, 44, 255)
@@ -64,6 +68,7 @@ LIGHT = dict(
     mapGrid=(0x14, 0x63, 0x2A, 31),
 )
 
+VERSION_LABEL = "0.1.4"
 W, H = 360, 800
 PAD = 20
 CW = W - 2 * PAD
@@ -297,24 +302,51 @@ def big_button(c: Canvas, th, y, label, icon=None, h=58, label_size=22):
     return y + h
 
 
-def tab_row(c: Canvas, th, y, active):
-    h = 48
-    labels = ("Tabela", "Terminarz", "Kariera")
-    seg = CW / 3
-    for i, label in enumerate(labels):
-        sel = i == active
-        c.text(0, y + 15, label, 14,
-               th["onHero"] if sel else th["onHeroMuted"],
-               bold=sel, center=PAD + seg * i + seg / 2)
-    c.bar(PAD + seg * active + 12, y + h - 3, seg - 24, 3, th["accent"])
+TILES = (
+    (I_TABLE, "Tabela", "Miejsce w lidze", 0),
+    (I_CAL, "Terminarz", "Kolejki i wyniki", 1),
+    (I_TROPHY, "Kariera", "Poziom i atrybuty", 2),
+    (I_BOOK, "Jak grać", "Zasady i sterowanie", None),
+)
+
+
+def tile_row(c: Canvas, th, y, active):
+    """Karuzela kafli jak w menu FIFY (zastąpiła pasek zakładek)."""
+    h = 86
+    gap = 10
+    tw = (CW - gap * 3) / 4
+    for i, (icon, title, hint, page) in enumerate(TILES):
+        x = PAD + i * (tw + gap)
+        sel = page == active
+        a = th["accent"]
+        fill = (a[0], a[1], a[2], 41) if sel else th["card"]
+        border = a if sel else th["cardBorder"]
+        c.card(x, y, tw, h, 16, fill, border, 1.5 if sel else 1.0)
+        c.text(x + 12, y + 10, icon, 19, a if sel else th["onHeroMuted"], fa=True)
+        c.text(x + 12, y + 36, title, 13, a if sel else th["onHero"], bold=True)
+        # podpowiedź łamana na dwie linie
+        slowa = hint.split()
+        linia = ""
+        for slowo in slowa:
+            proba = (linia + " " + slowo).strip()
+            if c.text_w(proba, 11) > tw - 24 and linia:
+                c.text(x + 12, y + 54, linia, 11, th["onHeroMuted"])
+                c.text(x + 12, y + 68, slowo, 11, th["onHeroMuted"])
+                linia = ""
+            else:
+                linia = proba
+        if linia:
+            c.text(x + 12, y + 54 if not c.text_w(linia, 11) else y + 54, linia, 11,
+                   th["onHeroMuted"])
     return y + h
 
 
-def page_table(c: Canvas, th, y):
+def page_table(c: Canvas, th, y, max_rows=None):
     c.text(PAD + 4, y, "B klasa · mazowieckie", 12, th["onHeroMuted"], bold=True)
     y += line_h(12) + 10
     row_h = 32
-    c.card(PAD, y, CW, 34 + row_h * len(TABLE_ROWS), 18, th["card"], th["cardBorder"])
+    rows = TABLE_ROWS if max_rows is None else TABLE_ROWS[:max_rows]
+    c.card(PAD, y, CW, 34 + row_h * len(rows), 18, th["card"], th["cardBorder"])
     inner, iw = PAD + 14, CW - 28
     hy = y + 10
     c.text(inner, hy, "#", 11, th["onHeroMuted"])
@@ -323,7 +355,7 @@ def page_table(c: Canvas, th, y):
     c.text(0, hy, "Pkt", 11, th["onHeroMuted"], right=inner + iw)
     c.hline(PAD, PAD + CW, y + 32, th["cardBorder"])
 
-    for i, (pos, name, goals, pts, is_player) in enumerate(TABLE_ROWS):
+    for i, (pos, name, goals, pts, is_player) in enumerate(rows):
         ry = y + 34 + i * row_h
         if is_player:
             a = th["accent"]
@@ -406,7 +438,7 @@ def menu_phone(dark: bool, tab: int, chrome: bool = True, scroll: float = 0.0) -
     y = status_bar(c, th, chrome) + 12
     y = header(c, th, y) + 14
     y = career_hero(c, th, y) + 6
-    y = tab_row(c, th, y, tab)
+    y = tile_row(c, th, y, tab)
 
     # „Graj” przyklejone do dolu ekranu, nad stopka.
     footer_y = H - 34
@@ -416,7 +448,7 @@ def menu_phone(dark: bool, tab: int, chrome: bool = True, scroll: float = 0.0) -
     layer = Canvas(W, page_h)  # przezroczysta warstwa = obszar pagera
     # `scroll` przesuwa treść zakładki w górę — jak przewinięty ekran na telefonie.
     if tab == 0:
-        page_table(layer, th, -scroll)
+        page_table(layer, th, -scroll, max_rows=int((page_h - 34 - 6) // 32))
     elif tab == 1:
         page_fixtures(layer, th, -scroll)
     else:
@@ -424,7 +456,7 @@ def menu_phone(dark: bool, tab: int, chrome: bool = True, scroll: float = 0.0) -
     c.img.alpha_composite(layer.img, (0, px(page_y)))
 
     big_button(c, th, button_y, "Graj", icon=I_SOCCER)
-    c.text(0, footer_y, "Wersja 0.1.0 · protokół v1", 12, th["onHeroMuted"], center=W / 2)
+    c.text(0, footer_y, f"Wersja {VERSION_LABEL} · protokół v1", 12, th["onHeroMuted"], center=W / 2)
     return c.finish()
 
 
@@ -454,7 +486,7 @@ def main(out_path: str) -> None:
                font=font(15, bold=True), fill=PAGE_FG, anchor="mt")
 
     d = ImageDraw.Draw(page)
-    d.text((px(margin), px(18)), "B-Klasa Hero — menu główne z przesuwanymi zakładkami",
+    d.text((px(margin), px(18)), "B-Klasa Hero — menu główne z karuzelą kafli",
            font=font(26, bold=True), fill=PAGE_FG)
     d.text((px(margin), px(50)),
            "Przesuń palcem: Tabela ↔ Terminarz ↔ Kariera. Motyw i pomoc siedzą w nagłówku, akcja „Graj” na dole.",

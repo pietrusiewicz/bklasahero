@@ -101,4 +101,8 @@
     <string name="stat_wins">Wygrane</string>
     <string name="stat_goals">Gole</string>
     <string name="stat_saves">Obrony</string>
+    <string name="home_tile_table_hint">Miejsce w lidze</string>
+    <string name="home_tile_fixtures_hint">Kolejki i wyniki</string>
+    <string name="home_tile_career_hint">Poziom i atrybuty</string>
+    <string name="home_tile_help_hint">Zasady i sterowanie</string>
 </resources>

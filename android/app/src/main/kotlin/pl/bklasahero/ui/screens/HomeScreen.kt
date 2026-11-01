@@ -26,12 +26,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Leaderboard
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.RestartAlt
@@ -45,8 +52,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -81,6 +86,97 @@ import pl.bklasahero.ui.components.FixturesView
 import pl.bklasahero.ui.components.LeagueTableView
 import pl.bklasahero.ui.theme.BkhColors
 import pl.bklasahero.ui.theme.LocalBkhColors
+
+/** Karuzela kafli jak w menu FIFY: wybór strony + skrót do pomocy. */
+@Composable
+private fun MenuTileRow(
+    colors: BkhColors,
+    selectedPage: Int,
+    onSelectPage: (Int) -> Unit,
+    onHelp: () -> Unit,
+) {
+    val tiles = listOf(
+        MenuTileSpec(Icons.Outlined.Leaderboard, R.string.career_table, R.string.home_tile_table_hint, 0),
+        MenuTileSpec(Icons.Outlined.CalendarMonth, R.string.career_fixtures, R.string.home_tile_fixtures_hint, 1),
+        MenuTileSpec(Icons.Outlined.EmojiEvents, R.string.menu_career, R.string.home_tile_career_hint, 2),
+        MenuTileSpec(Icons.AutoMirrored.Outlined.MenuBook, R.string.menu_how_to_play, R.string.home_tile_help_hint, null),
+    )
+    val listState = rememberLazyListState()
+
+    // Wybór strony (tap albo przesunięcie) przewija karuzelę do właściwego kafla.
+    LaunchedEffect(selectedPage) {
+        if (selectedPage in tiles.indices) listState.animateScrollToItem(selectedPage)
+    }
+
+    LazyRow(
+        state = listState,
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(vertical = 2.dp),
+    ) {
+        itemsIndexed(tiles) { index, tile ->
+            MenuTile(
+                spec = tile,
+                colors = colors,
+                selected = tile.page == selectedPage,
+                onClick = { tile.page?.let(onSelectPage) ?: onHelp() },
+            )
+        }
+    }
+}
+
+/** Jeden kafel menu: ikona, tytuł i podpowiedź, co jest w środku. */
+private data class MenuTileSpec(
+    val icon: ImageVector,
+    val titleRes: Int,
+    val hintRes: Int,
+    val page: Int?,
+)
+
+@Composable
+private fun MenuTile(
+    spec: MenuTileSpec,
+    colors: BkhColors,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) colors.accent.copy(alpha = 0.16f) else colors.card,
+        border = BorderStroke(
+            width = if (selected) 1.5.dp else 1.dp,
+            color = if (selected) colors.accent else colors.cardBorder,
+        ),
+        modifier = Modifier.width(116.dp),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Icon(
+                imageVector = spec.icon,
+                contentDescription = null,
+                tint = if (selected) colors.accent else colors.onHeroMuted,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(spec.titleRes),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = if (selected) colors.accent else colors.onHero,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = stringResource(spec.hintRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onHeroMuted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
 
 @Composable
 fun HomeScreen(state: AppUiState, viewModel: AppViewModel) {
@@ -140,6 +236,7 @@ fun HomeScreen(state: AppUiState, viewModel: AppViewModel) {
                     viewModel = viewModel,
                     colors = colors,
                     onNewCareer = { confirmNewCareer = true },
+                    onHelp = { dispatch(AppIntent.SetScreen(AppScreen.Tutorial)) },
                     modifier = Modifier.weight(1f),
                 )
             } else {
@@ -225,6 +322,7 @@ private fun HomeTabs(
     viewModel: AppViewModel,
     colors: BkhColors,
     onNewCareer: () -> Unit,
+    onHelp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val titles = listOf(R.string.career_table, R.string.career_fixtures, R.string.menu_career)
@@ -242,29 +340,12 @@ private fun HomeTabs(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        TabRow(
-            selectedTabIndex = pagerState.currentPage,
-            containerColor = Color.Transparent,
-            contentColor = colors.onHero,
-            divider = {},
-        ) {
-            titles.forEachIndexed { index, titleRes ->
-                val selected = pagerState.currentPage == index
-                Tab(
-                    selected = selected,
-                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                    text = {
-                        Text(
-                            text = stringResource(titleRes),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (selected) colors.onHero else colors.onHeroMuted,
-                            maxLines = 1,
-                        )
-                    },
-                )
-            }
-        }
+        MenuTileRow(
+            colors = colors,
+            selectedPage = pagerState.currentPage,
+            onSelectPage = { scope.launch { pagerState.animateScrollToPage(it) } },
+            onHelp = onHelp,
+        )
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxWidth().weight(1f),

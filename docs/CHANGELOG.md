@@ -4,6 +4,18 @@ Wszystkie istotne zmiany projektu są tu rejestrowane. Format inspirowany
 [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie zgodne
 z [SemVer](https://semver.org/lang/pl/).
 
+## [0.1.4] — 2026-11-01
+
+### Zmienione
+
+- **Menu główne jak hub z FIFY 14**: pasek zakładek zastąpiła **karuzela kafli** —
+  Tabela, Terminarz, Kariera i „Jak grać”. Wybrany kafel podświetla się akcentem
+  i pokazuje podpowiedź, co jest w środku; przesunięcie palcem przewija karuzelę,
+  a tapnięcie kafla przeskakuje na jego stronę. „Jak grać” otwiera samouczek —
+  wcześniej trzeba było szukać go w nagłówku.
+- Podglądy: [`docs/menu-preview.png`](menu-preview.png) odświeżony, zrzuty na stronie
+  przerysowane (9 sztuk, ten sam styl, ciemny motyw).
+
 ## [0.1.3] — 2026-10-04
 
 ### Zmienione

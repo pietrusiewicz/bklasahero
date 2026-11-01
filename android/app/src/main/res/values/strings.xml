@@ -102,4 +102,8 @@
     <string name="stat_wins">Wins</string>
     <string name="stat_goals">Goals</string>
     <string name="stat_saves">Saves</string>
+    <string name="home_tile_table_hint">League standing</string>
+    <string name="home_tile_fixtures_hint">Rounds and results</string>
+    <string name="home_tile_career_hint">Level and attributes</string>
+    <string name="home_tile_help_hint">Rules and controls</string>
 </resources>

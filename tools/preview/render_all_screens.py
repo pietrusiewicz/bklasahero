@@ -33,7 +33,7 @@ def main(out_dir: str) -> None:
     menu.render_screen(out("bklasahero-8-menu-terminarz.png"), dark=True, tab=1,
                        height=HEIGHT, scale=SCALE)
     menu.render_screen(out("bklasahero-9-menu-kariera.png"), dark=True, tab=2,
-                       height=HEIGHT, scale=SCALE, scroll=68)
+                       height=HEIGHT, scale=SCALE, scroll=150)
 
     # Zapowiedz meczu — laurka na mapce okolicy z odlegloscia.
     match.render_screen(out("bklasahero-7-zapowiedz-meczu.png"), dark=True, round_no=8,
