@@ -16,7 +16,7 @@ plugins {
 // Wersja z nadpisaniem przez CI: `-PversionName=... -PversionCode=...`.
 // Domyślnie używamy stałej semver z rdzenia (patrz scripts/bump-version.sh).
 val versionNameOverride = (project.findProperty("versionName") as String?) ?: "0.1.4"
-val versionCodeOverride = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 5
+val versionCodeOverride = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 6
 
 android {
     namespace = "pl.bklasahero"
