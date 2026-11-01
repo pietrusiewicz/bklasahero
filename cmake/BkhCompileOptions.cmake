@@ -33,6 +33,12 @@ function(bkh_apply_compile_options)
         add_compile_options("$<$<CONFIG:RelWithDebInfo>:-O2;-g>")
         # Widoczność symboli: rdzeń jest biblioteką — eksportujemy tylko to, co trzeba.
         add_compile_options("$<$<CONFIG:Release>:-fvisibility=hidden;-fvisibility-inlines-hidden>")
+        # Release bez symboli: na Androidzie NDK strippuje biblioteki przy pakowaniu,
+        # ale nie na każdej maszynie (np. host ARM z x86 build-tools). Wtedy APK
+        # rośnie z ~3,5 MB do ~22 MB, więc strip robi sam linker.
+        if(ANDROID)
+            add_link_options("$<$<CONFIG:Release>:-Wl,--strip-all>")
+        endif()
     endif()
 
     if(BKH_SANITIZERS)
